@@ -28,9 +28,23 @@ def readPrjLists():
 
 
 def fetchHtmlInfo(prj):
-	url_template = "https://github.com/%s"
-	req = urllib2.Request(url_template%prj)
-	ini_html = urllib2.urlopen(req,timeout=20).read().decode('utf-8')
+	url = "https://github.com/%s"%prj
+	req = urllib2.Request(url)
+	try:
+		error_msg = None
+		ini_html = urllib2.urlopen(req,timeout=20).read().decode('utf-8')
+	except urllib2.HTTPError, e:
+		error_msg = e.code
+	except urllib2.URLError, e:
+		error_msg = e.reason
+	except Exception,e:
+		error_msg = e.message
+
+	if error_msg != None:
+		# !!!!!应该持久化 错误信息
+		logger.error("error_msg:\t%s,%s"%(error_msg,url))
+		return
+
 	
 	nums = {}
 	# watch,star,fork

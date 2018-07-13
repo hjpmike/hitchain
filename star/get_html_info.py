@@ -5,7 +5,9 @@ for fetching raw infos from html
 '''
 import time
 import logging
- 
+import urllib2
+from lxml import etree
+
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_html_info.log")
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -26,7 +28,18 @@ def readPrjLists():
 
 
 def fetchHtmlInfo(prj):
-	pass
+	url_template = "https://github.com/%s"
+	req = urllib2.Request(url_template%prj)
+	ini_html = urllib2.urlopen(req,timeout=20).read().decode('utf-8')
+	
+	# watch,star,fork
+	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li/a[2]')
+	# !!! 应该要判断该规则是否还有效
+	watch_num = lis[0].text.strip()
+	star_num = lis[1].text.strip()
+	fork_num = lis[2].text.strip()
+
+
 
 def main():
 	while True:

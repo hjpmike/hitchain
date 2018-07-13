@@ -68,7 +68,7 @@ def fetchHtmlInfo(prj):
 			pass
 	
 	# 存储数据
-	dbop.storeHtmlNums(nums)
+	dbop.storeHtmlNums(repo_id, nums)
 
 def main():
 	while True:

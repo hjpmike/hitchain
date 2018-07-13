@@ -1,6 +1,7 @@
 #coding:utf-8
 config = {
+	"db_host" : "localhost",
 	"db_name" : "hcc",
-	"db_user_name" : "hcc_user",
+	"db_user" : "hcc_user",
 	"db_passwd" : "hcc_passwd"
 }

@@ -88,5 +88,10 @@ def main():
 			time.sleep(INTERVAL_TIME - work_time)
 
 
+def init():
+	#应该查看数据库表等是否存在
+	pass
+
 if __name__ == '__main__':
+	init()
 	main()

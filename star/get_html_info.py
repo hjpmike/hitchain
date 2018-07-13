@@ -6,7 +6,9 @@ for fetching raw infos from html
 import time
 import logging
 import urllib2
+from config import config
 from lxml import etree
+from dbop import storeHtmlNums
 
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_html_info.log")
@@ -16,7 +18,7 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.NOTSET)
 
 
-INTERVAL_TIME = 6 #in seconds
+INTERVAL_TIME = config["html_fetch_interval"]
 
 def readPrjLists():
 	prjs = []
@@ -65,7 +67,8 @@ def fetchHtmlInfo(prj):
 		except Exception,e:
 			pass
 	
-	print nums
+	# 存储数据
+	storeHtmlNums(nums)
 
 def main():
 	while True:

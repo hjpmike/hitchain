@@ -88,9 +88,13 @@ def main():
 			time.sleep(INTERVAL_TIME - work_time)
 
 
+def createTables():
+	# !!!创建一个表html_info(repo_id,[repo_name,],star,fork,watch,commit,branch,release,contributor)
+	pass
+
 def init():
 	#应该查看数据库表等是否存在
-	pass
+	createTables()
 
 if __name__ == '__main__':
 	init()

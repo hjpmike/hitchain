@@ -8,7 +8,7 @@ import logging
 import urllib2
 from config import config
 from lxml import etree
-from dbop import storeHtmlNums
+import dbop
 
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_html_info.log")
@@ -68,7 +68,7 @@ def fetchHtmlInfo(prj):
 			pass
 	
 	# 存储数据
-	storeHtmlNums(nums)
+	dbop.storeHtmlNums(nums)
 
 def main():
 	while True:
@@ -91,10 +91,13 @@ def main():
 def createTables():
 	# !!!创建一个表html_info(repo_id,[repo_name,],star,fork,watch,commit,branch,release,contributor,updated_at)
 	# !!!创建一个表html_info_error(repo_id,repo_name,error_msg,error_at)
-	pass
+	logger.info("\t create tables")
+	dbop.createHtmlInfo()
+
 
 def init():
 	#应该查看数据库表等是否存在
+	logger.info("init...")
 	createTables()
 
 if __name__ == '__main__':

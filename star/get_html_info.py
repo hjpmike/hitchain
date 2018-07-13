@@ -89,7 +89,8 @@ def main():
 
 
 def createTables():
-	# !!!创建一个表html_info(repo_id,[repo_name,],star,fork,watch,commit,branch,release,contributor)
+	# !!!创建一个表html_info(repo_id,[repo_name,],star,fork,watch,commit,branch,release,contributor,updated_at)
+	# !!!创建一个表html_info_error(repo_id,repo_name,error_msg,error_at)
 	pass
 
 def init():

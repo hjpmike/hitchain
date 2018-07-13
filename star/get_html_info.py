@@ -32,14 +32,26 @@ def fetchHtmlInfo(prj):
 	req = urllib2.Request(url_template%prj)
 	ini_html = urllib2.urlopen(req,timeout=20).read().decode('utf-8')
 	
+	nums = {}
 	# watch,star,fork
 	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li/a[2]')
 	# !!! 应该要判断该规则是否还有效
-	watch_num = lis[0].text.strip()
-	star_num = lis[1].text.strip()
-	fork_num = lis[2].text.strip()
-
-
+	nums["watch"] = lis[0].text.strip()
+	nums["star"] = lis[1].text.strip()
+	nums["fork"] = lis[2].text.strip()
+	
+	#contributor,release,commit,branch
+	# # !!! 应该要判断该规则是否还有效
+	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
+	for lia in lis:
+		try:
+			tmp_num = lia.xpath("./span")[0].text.strip()
+			tmp_txt = lia.xpath("./text()")[-1].strip()
+			nums[tmp_txt] = tmp_num
+		except Exception,e:
+			pass
+	
+	print nums
 
 def main():
 	while True:

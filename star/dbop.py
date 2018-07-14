@@ -7,8 +7,16 @@ conn = MySQLdb.connect(config["db_host"],config["db_user"],
 							config["db_passwd"],config["db_name"],charset='utf8mb4')
 
 
+
 def storeHtmlNums(repo_id, nums):
-	print "store html nums"
+	cursor = conn.cursor()
+	fields = nums.keys()
+	values = [nums[field] for field in fields]
+	values.insert(0,"%d"%repo_id)
+
+	sql_stat = "insert into html_info(repo_id,%s) values(%s)"%(",".join(fields), ",".join(values))
+	cursor.execute(sql_stat)
+	cursor.close()
 
 def createHtmlInfo():
 	html_info_sql = '''
@@ -18,13 +26,14 @@ def createHtmlInfo():
 		`star` int(11) DEFAULT NULL,
 		`fork` int(11) DEFAULT NULL,
 		`watch` int(11) DEFAULT NULL,
-		`commit` int(11) DEFAULT NULL,
-		`branch` int(11) DEFAULT NULL,
-		`release` int(11) DEFAULT NULL,
-		`contributor` int(11) DEFAULT NULL,
+		`commits` int(11) DEFAULT NULL,
+		`branches` int(11) DEFAULT NULL,
+		`releases` int(11) DEFAULT NULL,
+		`contributors` int(11) DEFAULT NULL,
 		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
 	cursor = conn.cursor()
 	cursor.execute(html_info_sql)
+	cursor.close()

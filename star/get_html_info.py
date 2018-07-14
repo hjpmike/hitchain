@@ -19,13 +19,14 @@ logger.setLevel(logging.NOTSET)
 
 
 INTERVAL_TIME = config["html_fetch_interval"]
-
+REPO_ID = {}
 def readPrjLists():
 	prjs = []
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls = prj_line.split("\t")
-			prjs.append(prjls[0])
+			prjs.append(prjls[1])
+			REPO_ID[prjls[1]] = int(prjls[0])
 	return prjs
 
 
@@ -34,7 +35,8 @@ def fetchHtmlInfo(prj):
 	req = urllib2.Request(url)
 	try:
 		error_msg = None
-		ini_html = urllib2.urlopen(req,timeout=20).read().decode('utf-8')
+		# !!!要判断返回的是否是正常页面，比如url本身就是错的
+		ini_html = urllib2.urlopen(req,timeout=20).read().lower().decode('utf-8')
 	except urllib2.HTTPError, e:
 		error_msg = e.code
 	except urllib2.URLError, e:
@@ -72,7 +74,7 @@ def fetchHtmlInfo(prj):
 			pass
 	
 	# 存储数据
-	dbop.storeHtmlNums(repo_id, nums)
+	dbop.storeHtmlNums(REPO_ID[prj], nums)
 
 def main():
 	while True:

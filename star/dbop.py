@@ -5,7 +5,7 @@ import MySQLdb
 
 conn = MySQLdb.connect(config["db_host"],config["db_user"], 
 							config["db_passwd"],config["db_name"],charset='utf8mb4')
-
+							
 #########################################
 ### 一些可以执行简单sql语句的函数
 #########################################
@@ -31,13 +31,27 @@ def select_all(sql_stat):
 	cursor.close()
 	return result
 
+#########################################
+#### funcs created for get_json_info.py
+#########################################
+def createJsonRaw(dat_type):
+	pass
+
+def createPrInfo():
+	pass
+
+def createIssueInfo():
+	pass
+
+#########################################
+#### funcs created for get_html_info.py
+#########################################
 def storeHtmlError(repo_id,error_msg):
 	cursor = conn.cursor()
 	sql_stat = "insert into html_error(repo_id,error_msg) values(%s,'%s')"%(repo_id,error_msg)
 	cursor.execute(sql_stat)
 	conn.commit()
 	cursor.close()
-
 
 def storeHtmlNums(repo_id, nums):
 	cursor = conn.cursor()

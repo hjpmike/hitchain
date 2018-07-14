@@ -6,6 +6,7 @@ for fetching json infos
 import time
 import logging
 import sys
+import dbop
 from config import config
 import threading
 lock = threading.RLock()
@@ -114,7 +115,11 @@ def main():
 def launchTokenPool():
 	pass
 def createTable():
-	pass
+	dbop.createJsonRaw("pulls")
+	dbop.createJsonRaw("issues")
+	dbop.createPrInfo()
+	dbop.createIssueInfo()
+
 def init():
 	# 启动token池 
 	launchTokenPool()

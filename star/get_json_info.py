@@ -23,6 +23,19 @@ PRJS = []
 PRJS_DONE = [] #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
 
+def _fetchJson(prj, dataType):
+
+	# 获取 *_json_raw 的最大page值 -> last_page
+	# 获取 *_info 中 last_page对应的数据集合 -> last_data
+	# 如果 len(last_data)  == 100 则 next_page = last_page；否则next_pge = next_page
+
+	while True:
+		pass
+		# 远程访问next page对应的数据
+		# 先存储原始数据，再抽取存储条目数据
+		# 抽取next url，不存在的话，退出
+
+
 def fetchThread():
 	logger.info("%s start to work"%( threading.current_thread().name))
 	while True:
@@ -36,13 +49,9 @@ def fetchThread():
 		finally:
 			lock.release()
 
-		# 获取该项目的上次工作记录
+		_fetchJson(prj, "issues")
+		_fetchJson(prj, "pulls")
 
-		# 获取最新数据
-		
-		# 进行存储
-
-		# 工作完了
 		lock.acquire()
 		try:
 			PRJS_DONE.append(prj)

@@ -4,6 +4,6 @@ config = {
 	"db_name" : "hcc",
 	"db_user" : "hcc_user",
 	"db_passwd" : "hcc_passwd",
-	"html_fetch_interval" : 3600, #in second
-	"json_fetch_interval" : 3600 #in second
+	"html_fetch_interval" : 10, #in second
+	"json_fetch_interval" : 10 #in second
 }

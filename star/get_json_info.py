@@ -8,6 +8,7 @@ import logging
 import sys
 from config import config
 import threading
+lock = threading.RLock()
 
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_json_info.log")
@@ -24,11 +25,33 @@ DEFAULT_THD_NUM = 3 # 默认线程个数
 
 def fetchThread():
 	logger.info("%s start to work"%( threading.current_thread().name))
+	while True:
+		lock.acquire()
+		try:
+			prj = PRJS.pop(0)
+			logger.info("%s fetch %s"%( threading.current_thread().name,prj))
+		except Exception,e:
+			logger.info("%s no more prjs"%( threading.current_thread().name))
+			break 
+		finally:
+			lock.release()
+
+		# 获取该项目的上次工作记录
+
+		# 获取最新数据
+		
+		# 进行存储
+
+		# 工作完了
+		lock.acquire()
+		try:
+			PRJS_DONE.append(prj)
+		finally:
+			lock.release()
 
 
-
-def fetchJsonInfo(prj):
-	
+def fetchJsonInfo():
+	global PRJS_DONE, PRJS
 	# 用多线程进行并行操作
 	if len(sys.argv) < 2:
 		threading_num = DEFAULT_THD_NUM
@@ -36,6 +59,9 @@ def fetchJsonInfo(prj):
 		threading_num = int(sys.argv[1])
 
 	thread_list = [] 
+	if threading_num > len(PRJS):
+		threading_num = len(PRJS)
+
 	for i in range(0,threading_num):
 		t = threading.Thread(target=fetchThread,name="Thread-%d"%i)
 		thread_list.append(t)
@@ -46,6 +72,9 @@ def fetchJsonInfo(prj):
 		thread.join()
 
 	logger.info("all threads done work")
+	PRJS = PRJS_DONE
+	PRJS_DONE = []
+
 	
 def readPrjLists():
 	prjs = []
@@ -57,6 +86,7 @@ def readPrjLists():
 	return prjs
 
 def main():
+	global PRJS
 	while True:
 
 		logger.info("start another round of work")
@@ -64,7 +94,7 @@ def main():
 		start_time = time.time()
 
 		PRJS = readPrjLists()
-		fetchJsonInfo(PRJS)
+		fetchJsonInfo()
 		
 		end_time = time.time()
 		work_time = end_time - start_time

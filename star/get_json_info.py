@@ -23,18 +23,72 @@ REPO_ID = {}
 PRJS = []
 PRJS_DONE = [] #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
+URL_TEMPLATE = "https://api.github.com/repos/%s/%s?page=%d&per_page=100&state=all&direction=asc"
+
+def _get_url(url):
+	# token池
+	req = urllib2.Request(url,timeout=20)
+	try:
+		error_msg = None
+		result = urllib2.urlopen(req,timeout=20)
+		raw_data = result.read().decode('utf-8')
+		logger.info("\t: %s"%(url,))
+	except urllib2.HTTPError, e:
+		error_msg = e.code
+	except urllib2.URLError, e:
+		error_msg = e.reason
+	except Exception,e:
+		error_msg = e.message
+		
+	if error_msg != None:
+		cursor = conn.cursor()
+		cursor.execute("insert into json_error(url,error,error_at) values(%s,%s,%s)",
+						(lst_url, error_msg, time.strftime('%Y-%m-%d %H:%M:%S')))
+		cursor.close()
+		conn.commit()
+		logger.info("%s: error_msg:\t%s,%s"%(threading.current_thread().name,error_msg,lst_url,))
+		return None,None
+	
+	return result, raw_data
+
+def _get_last_fetch(prj,dataType):
+	# 获取上次记录，以及上次获得数据集合
+	json_raw_id, last_page = dbop.select_one("select id,page from %s_json_raw where repo_id =%s order by id desc limit 1"%(data_Type, REPO_ID[prj]), 1)
+	last_data_set = set([ item[0] for item in 
+				dbop.select_all("select pr_num from %s_info where json_raw_id =%s"%(dataType,json_raw_id))])
+	
+	return last_page, last_data_set
+
 
 def _fetchJson(prj, dataType):
 
-	# 获取 *_json_raw 的最大page值 -> last_page
-	# 获取 *_info 中 last_page对应的数据集合 -> last_data
-	# 如果 len(last_data)  == 100 则 next_page = last_page；否则next_pge = next_page
+	last_page, last_data_set = _get_last_fetch(prj,dataType)
 
-	while True:
-		pass
-		# 远程访问next page对应的数据
-		# 先存储原始数据，再抽取存储条目数据
-		# 抽取next url，不存在的话，退出
+	while last_page is not None:
+		url =  URL_TEMPLATE%(prj,dataType,last_page)
+		result, raw_json = _get_url(url)
+		if result is None:
+			break
+
+		dbop.execute("insert into %s_json_raw(repo_id, page, raw) vlaues(%s,%s,%s)"%(
+							dataType, REPO_ID[prj], last_page, raw_json))
+		new_data_set = json.loads(raw_json)
+		for n_data in new_date_set:
+			if n_date["number"] not in last_data_set:
+				pass # 存储数据
+		
+		# 获取下一个列表页url
+		if 'link' not in result.headers.keys():
+			logger.info("%s: maybe %s has less 100 prs"%(threading.current_thread().name, prj))
+			break
+
+		links = result.headers["link"]
+		if "next" in links:
+			last_page = links[1:links.index(">")]
+		else:
+			last_page = None
+			logger.info("%s: %s %s"%(threading.current_thread().name,prj, "no next link any more",))
+		
 
 
 def fetchThread():

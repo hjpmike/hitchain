@@ -5,7 +5,7 @@ import MySQLdb
 
 conn = MySQLdb.connect(config["db_host"],config["db_user"], 
 							config["db_passwd"],config["db_name"],charset='utf8mb4')
-							
+
 #########################################
 ### 一些可以执行简单sql语句的函数
 #########################################
@@ -15,13 +15,16 @@ def execute(sql_stat):
 	conn.commit()
 	cursor.close()
 
-def select_one(sql_stat):
+def select_one(sql_stat, none_return_value):
 	cursor = conn.cursor()
 	cursor.execute(sql_stat)
 	result = cursor.fetchone()
 	conn.commit()
 	cursor.close()
-	return result
+	if result is None:
+		return none_return_value
+	else:
+		return result
 
 def select_all(sql_stat):
 	cursor = conn.cursor()

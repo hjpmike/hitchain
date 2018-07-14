@@ -6,7 +6,30 @@ import MySQLdb
 conn = MySQLdb.connect(config["db_host"],config["db_user"], 
 							config["db_passwd"],config["db_name"],charset='utf8mb4')
 
+#########################################
+### 一些可以执行简单sql语句的函数
+#########################################
+def execute(sql_stat):
+	cursor = conn.cursor()
+	cursor.execute(sql_stat)
+	conn.commit()
+	cursor.close()
 
+def select_one(sql_stat):
+	cursor = conn.cursor()
+	cursor.execute(sql_stat)
+	result = cursor.fetchone()
+	conn.commit()
+	cursor.close()
+	return result
+
+def select_all(sql_stat):
+	cursor = conn.cursor()
+	cursor.execute(sql_stat)
+	result = cursor.fetchall()
+	conn.commit()
+	cursor.close()
+	return result
 
 def storeHtmlError(repo_id,error_msg):
 	cursor = conn.cursor()

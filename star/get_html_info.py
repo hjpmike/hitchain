@@ -50,11 +50,15 @@ def fetchHtmlInfo(prj):
 	
 	nums = {}
 	# watch,star,fork
-	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li/a[2]')
+	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li')
 	# !!! 应该要判断该规则是否还有效
-	nums["watch"] = lis[0].text.strip()
-	nums["star"] = lis[1].text.strip()
-	nums["fork"] = lis[2].text.strip()
+	for li in lis:
+		try:
+			tmp_text = li.xpath("./a[1]/text()")[-1].strip()
+			tmp_num = li.xpath("./a[2]/text()")[0].strip()
+			nums[tmp_text] = tmp_num.replace(",", "")
+		except Exception,e:
+			logger.error(e)
 	
 	#contributor,release,commit,branch
 	# # !!! 应该要判断该规则是否还有效
@@ -63,7 +67,7 @@ def fetchHtmlInfo(prj):
 		try:
 			tmp_num = lia.xpath("./span")[0].text.strip()
 			tmp_txt = lia.xpath("./text()")[-1].strip()
-			nums[tmp_txt] = tmp_num
+			nums[tmp_txt] = tmp_num.replace(",","")
 		except Exception,e:
 			pass
 	

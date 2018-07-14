@@ -1,0 +1,53 @@
+#coding:utf-8
+'''
+created by starlee @ 2018-07-14 10:45
+for fetching json infos
+'''
+import time
+import logging
+
+logger = logging.getLogger()
+hdlr = logging.FileHandler("log/get_html_info.log")
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.NOTSET)
+
+def readPrjLists():
+	prjs = []
+	with open("prjs.txt","r") as fp:
+		for prj_line in fp.readlines():
+			prjls = prj_line.split("\t")
+			prjs.append(prjls[1])
+			REPO_ID[prjls[1]] = int(prjls[0])
+	return prjs
+
+def main():
+	while True:
+
+		logger.info("start another round of work")
+		# 爬完历史信息后，每个一天更新一次
+		start_time = time.time()
+
+		prjs = readPrjLists()
+		for prj in prjs:
+			fetchJsonInfo(prj)
+		
+		end_time = time.time()
+		work_time = end_time - start_time
+		if work_time < INTERVAL_TIME:
+			logger.info("not enough interval, sleep a while")
+			time.sleep(INTERVAL_TIME - work_time)
+
+def launchTokenPool():
+	pass
+def createTable():
+	pass
+def init():
+	# 启动token池 
+	launchTokenPool()
+	# 创建表
+	createTable()
+if __name__ == '__main__':
+	init()
+	main()

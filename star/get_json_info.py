@@ -4,6 +4,8 @@ created by starlee @ 2018-07-14 10:45
 for fetching json infos
 '''
 import time
+import urllib2
+import json
 import logging
 import sys
 import dbop
@@ -27,7 +29,9 @@ URL_TEMPLATE = "https://api.github.com/repos/%s/%s?page=%d&per_page=100&state=al
 
 def _get_url(url):
 	# token池
-	req = urllib2.Request(url,timeout=20)
+
+	# !!!! 如果出错了，应该重试几次
+	req = urllib2.Request(url)
 	try:
 		error_msg = None
 		result = urllib2.urlopen(req,timeout=20)
@@ -41,21 +45,20 @@ def _get_url(url):
 		error_msg = e.message
 		
 	if error_msg != None:
-		cursor = conn.cursor()
-		cursor.execute("insert into json_error(url,error,error_at) values(%s,%s,%s)",
-						(lst_url, error_msg, time.strftime('%Y-%m-%d %H:%M:%S')))
-		cursor.close()
-		conn.commit()
-		logger.info("%s: error_msg:\t%s,%s"%(threading.current_thread().name,error_msg,lst_url,))
+		dbop.execute("insert into json_error(url,error) values(%s,%s)", (url, error_msg))
+		logger.info("%s: error_msg:\t%s,%s"%(threading.current_thread().name,error_msg,url,))
 		return None,None
 	
 	return result, raw_data
 
 def _get_last_fetch(prj,dataType):
 	# 获取上次记录，以及上次获得数据集合
-	json_raw_id, last_page = dbop.select_one("select id,page from %s_json_raw where repo_id =%s order by id desc limit 1"%(data_Type, REPO_ID[prj]), 1)
+	last_page = dbop.select_one("select page from " + "%s_json_raw"%dataType + " where repo_id=%s order by id desc limit 1",
+								(REPO_ID[prj],), (1,))[0]
 	last_data_set = set([ item[0] for item in 
-				dbop.select_all("select pr_num from %s_info where json_raw_id =%s"%(dataType,json_raw_id))])
+						dbop.select_all("select number from " +"%s_info"%dataType + " where repo_id=%s and page =%s", (
+							REPO_ID[prj],last_page))
+						])
 	
 	return last_page, last_data_set
 
@@ -70,21 +73,29 @@ def _fetchJson(prj, dataType):
 		if result is None:
 			break
 
-		dbop.execute("insert into %s_json_raw(repo_id, page, raw) vlaues(%s,%s,%s)"%(
-							dataType, REPO_ID[prj], last_page, raw_json))
+		dbop.execute("insert into " + "%s_json_raw"%dataType +"(repo_id, page, raw) values(%s,%s,%s)", (
+							REPO_ID[prj], last_page, raw_json))
 		new_data_set = json.loads(raw_json)
-		for n_data in new_date_set:
-			if n_date["number"] not in last_data_set:
-				pass # 存储数据
+
+		for n_data in new_data_set:
+
+			if n_data["number"] not in last_data_set:
+				dbop.execute("insert into " + "%s_info"%dataType + "(repo_id,number,page,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s)", 
+					( REPO_ID[prj],n_data["number"],last_page,n_data["created_at"],
+									n_data["closed_at"],n_data["user"]["id"],n_data["user"]["login"]
+					))
+			
 		
+		# 以后的last_data_set 应该为空
+		last_data_set = []
+
 		# 获取下一个列表页url
 		if 'link' not in result.headers.keys():
 			logger.info("%s: maybe %s has less 100 prs"%(threading.current_thread().name, prj))
 			break
-
 		links = result.headers["link"]
 		if "next" in links:
-			last_page = links[1:links.index(">")]
+			last_page += 1
 		else:
 			last_page = None
 			logger.info("%s: %s %s"%(threading.current_thread().name,prj, "no next link any more",))
@@ -104,7 +115,7 @@ def fetchThread():
 		finally:
 			lock.release()
 
-		_fetchJson(prj, "issues")
+		# _fetchJson(prj, "issues")
 		_fetchJson(prj, "pulls")
 
 		lock.acquire()
@@ -144,7 +155,7 @@ def readPrjLists():
 	prjs = []
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
-			prjls = prj_line.split("\t")
+			prjls = [item.strip() for item in prj_line.split("\t")]
 			prjs.append(prjls[1])
 			REPO_ID[prjls[1]] = int(prjls[0])
 	return prjs

@@ -24,7 +24,7 @@ def readPrjLists():
 	prjs = []
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
-			prjls = prj_line.split("\t")
+			prjls =[item.strip() for item in prj_line.split("\t")]
 			prjs.append(prjls[1])
 			REPO_ID[prjls[1]] = int(prjls[0])
 	return prjs

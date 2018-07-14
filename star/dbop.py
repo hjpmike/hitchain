@@ -9,15 +9,15 @@ conn = MySQLdb.connect(config["db_host"],config["db_user"],
 #########################################
 ### 一些可以执行简单sql语句的函数
 #########################################
-def execute(sql_stat):
+def execute(sql_stat,params=None):
 	cursor = conn.cursor()
-	cursor.execute(sql_stat)
+	cursor.execute(sql_stat,params)
 	conn.commit()
 	cursor.close()
 
-def select_one(sql_stat, none_return_value):
+def select_one(sql_stat, params,none_return_value=None):
 	cursor = conn.cursor()
-	cursor.execute(sql_stat)
+	cursor.execute(sql_stat,params)
 	result = cursor.fetchone()
 	conn.commit()
 	cursor.close()
@@ -26,9 +26,9 @@ def select_one(sql_stat, none_return_value):
 	else:
 		return result
 
-def select_all(sql_stat):
+def select_all(sql_stat,params=None):
 	cursor = conn.cursor()
-	cursor.execute(sql_stat)
+	cursor.execute(sql_stat,params)
 	result = cursor.fetchall()
 	conn.commit()
 	cursor.close()
@@ -37,11 +37,46 @@ def select_all(sql_stat):
 #########################################
 #### funcs created for get_json_info.py
 #########################################
-def createJsonRaw(dat_type):
-	pass
+def createJsonRaw(data_type):
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `%s_json_raw` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`page` int(11) DEFAULT NULL,
+		`raw` longtext,
+		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
+		'''%(data_type)
+	execute(sql_stat)
+
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `json_error` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`url` varchar(250) DEFAULT NULL,
+		`error` varchar(500) DEFAULT NULL,
+		`error_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+		'''
+	execute(sql_stat)
+
 
 def createPrInfo():
-	pass
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `pulls_info` (
+			`id` int(11) NOT NULL AUTO_INCREMENT,
+			`repo_id` int(11) DEFAULT NULL,
+			`page` int(11) DEFAULT NULL,
+			`number` int(11) DEFAULT NULL,
+			`created_at` varchar(20) DEFAULT NULL,
+			`closed_at` varchar(20) DEFAULT NULL,
+			`user_id` int(11) DEFAULT NULL,
+			`user_name` varchar(500) DEFAULT NULL,
+			PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+		'''
+	execute(sql_stat)
 
 def createIssueInfo():
 	pass
@@ -76,9 +111,7 @@ def createHtmlError():
 		PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=latin1
 	'''
-	cursor = conn.cursor()
-	cursor.execute(html_error_sql)
-	cursor.close()
+	execute(html_error_sql)
 
 def createHtmlInfo():
 	html_info_sql = '''
@@ -96,6 +129,4 @@ def createHtmlInfo():
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
-	cursor = conn.cursor()
-	cursor.execute(html_info_sql)
-	cursor.close()
+	execute(html_info_sql)

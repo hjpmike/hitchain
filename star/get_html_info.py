@@ -30,6 +30,35 @@ def readPrjLists():
 	return prjs
 
 
+def extract_html(prj,ini_html):
+	nums = {}
+	# watch,star,fork
+	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li')
+	# !!! 应该要判断该规则是否还有效
+	for li in lis:
+		try:
+			tmp_text = li.xpath("./a[1]/text()")[-1].strip()
+			tmp_num = li.xpath("./a[2]/text()")[0].strip()
+			nums[tmp_text] = tmp_num.replace(",", "")
+		except Exception,e:
+			logger.error(e)
+			dbop.storeHtmlError(REPO_ID[prj],e)
+	
+	#contributor,release,commit,branch
+	# # !!! 应该要判断该规则是否还有效
+	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
+	for lia in lis:
+		try:
+			tmp_txt = lia.xpath("./text()")[-1].strip()
+			tmp_num = lia.xpath("./span")[0].text.strip()
+			nums[tmp_txt] = tmp_num.replace(",","")
+		except Exception,e:
+			if(tmp_txt != "mit"):
+				logger.error(e)
+				dbop.storeHtmlError(REPO_ID[prj],e)
+	
+	dbop.storeHtmlNums(REPO_ID[prj],nums)
+
 def fetchHtmlInfo(prj):
 	url = "https://github.com/%s"%prj
 	req = urllib2.Request(url)
@@ -47,34 +76,10 @@ def fetchHtmlInfo(prj):
 	if error_msg != None:
 		# !!!!!应该持久化 错误信息
 		logger.error("error_msg:\t%s,%s"%(error_msg,url))
+		dbop.storeHtmlError(REPO_ID[prj],error_msg)
 		return
 
-	
-	nums = {}
-	# watch,star,fork
-	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li')
-	# !!! 应该要判断该规则是否还有效
-	for li in lis:
-		try:
-			tmp_text = li.xpath("./a[1]/text()")[-1].strip()
-			tmp_num = li.xpath("./a[2]/text()")[0].strip()
-			nums[tmp_text] = tmp_num.replace(",", "")
-		except Exception,e:
-			logger.error(e)
-	
-	#contributor,release,commit,branch
-	# # !!! 应该要判断该规则是否还有效
-	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
-	for lia in lis:
-		try:
-			tmp_num = lia.xpath("./span")[0].text.strip()
-			tmp_txt = lia.xpath("./text()")[-1].strip()
-			nums[tmp_txt] = tmp_num.replace(",","")
-		except Exception,e:
-			pass
-	
-	# 存储数据
-	dbop.storeHtmlNums(REPO_ID[prj], nums)
+	extract_html(prj,ini_html)
 
 def main():
 	while True:
@@ -95,10 +100,10 @@ def main():
 
 
 def createTables():
-	# !!!创建一个表html_info(repo_id,[repo_name,],star,fork,watch,commit,branch,release,contributor,updated_at)
 	# !!!创建一个表html_info_error(repo_id,repo_name,error_msg,error_at)
 	logger.info("\t create tables")
 	dbop.createHtmlInfo()
+	dbop.createHtmlError()
 
 
 def init():

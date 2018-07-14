@@ -8,6 +8,14 @@ conn = MySQLdb.connect(config["db_host"],config["db_user"],
 
 
 
+def storeHtmlError(repo_id,error_msg):
+	cursor = conn.cursor()
+	sql_stat = "insert into html_error(repo_id,error_msg) values(%s,'%s')"%(repo_id,error_msg)
+	cursor.execute(sql_stat)
+	conn.commit()
+	cursor.close()
+
+
 def storeHtmlNums(repo_id, nums):
 	cursor = conn.cursor()
 	fields = nums.keys()
@@ -16,6 +24,20 @@ def storeHtmlNums(repo_id, nums):
 
 	sql_stat = "insert into html_info(repo_id,%s) values(%s)"%(",".join(fields), ",".join(values))
 	cursor.execute(sql_stat)
+	cursor.close()
+
+def createHtmlError():
+	html_error_sql = '''
+		CREATE TABLE IF NOT EXISTS`html_error` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`error_msg` text,
+		`error_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1
+	'''
+	cursor = conn.cursor()
+	cursor.execute(html_error_sql)
 	cursor.close()
 
 def createHtmlInfo():

@@ -5,14 +5,29 @@ for fetching json infos
 '''
 import time
 import logging
+import sys
+from config import config
 
 logger = logging.getLogger()
-hdlr = logging.FileHandler("log/get_html_info.log")
+hdlr = logging.FileHandler("log/get_json_info.log")
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.NOTSET)
 
+INTERVAL_TIME = config["json_fetch_interval"]
+REPO_ID = {}
+PRJS = []
+DEFAULT_THD_NUM = 3 # 默认线程个数
+
+
+def fetchJsonInfo(prj):
+	# 用多线程进行并行操作
+	if len(sys.argv) < 2:
+		threading_num = DEFAULT_THD_NUM
+	else:
+		threading_num = sys.argv[1]
+	
 def readPrjLists():
 	prjs = []
 	with open("prjs.txt","r") as fp:
@@ -29,9 +44,8 @@ def main():
 		# 爬完历史信息后，每个一天更新一次
 		start_time = time.time()
 
-		prjs = readPrjLists()
-		for prj in prjs:
-			fetchJsonInfo(prj)
+		PRJS = readPrjLists()
+		fetchJsonInfo(PRJS)
 		
 		end_time = time.time()
 		work_time = end_time - start_time

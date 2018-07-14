@@ -26,6 +26,7 @@ def fetchThread():
 	logger.info("%s start to work"%( threading.current_thread().name))
 
 
+
 def fetchJsonInfo(prj):
 	
 	# 用多线程进行并行操作
@@ -34,11 +35,17 @@ def fetchJsonInfo(prj):
 	else:
 		threading_num = int(sys.argv[1])
 
-
+	thread_list = [] 
 	for i in range(0,threading_num):
 		t = threading.Thread(target=fetchThread,name="Thread-%d"%i)
-		t.start()
-		t.join()
+		thread_list.append(t)
+
+	for thread in thread_list:
+		thread.start()
+	for thread in thread_list:
+		thread.join()
+
+	logger.info("all threads done work")
 	
 def readPrjLists():
 	prjs = []

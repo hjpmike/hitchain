@@ -7,6 +7,7 @@ import time
 import logging
 import sys
 from config import config
+import threading
 
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_json_info.log")
@@ -18,15 +19,26 @@ logger.setLevel(logging.NOTSET)
 INTERVAL_TIME = config["json_fetch_interval"]
 REPO_ID = {}
 PRJS = []
+PRJS_DONE = [] #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
+
+def fetchThread():
+	logger.info("%s start to work"%( threading.current_thread().name))
 
 
 def fetchJsonInfo(prj):
+	
 	# 用多线程进行并行操作
 	if len(sys.argv) < 2:
 		threading_num = DEFAULT_THD_NUM
 	else:
-		threading_num = sys.argv[1]
+		threading_num = int(sys.argv[1])
+
+
+	for i in range(0,threading_num):
+		t = threading.Thread(target=fetchThread,name="Thread-%d"%i)
+		t.start()
+		t.join()
 	
 def readPrjLists():
 	prjs = []

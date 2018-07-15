@@ -9,13 +9,23 @@ conn = MySQLdb.connect(config["db_host"],config["db_user"],
 #########################################
 ### 一些可以执行简单sql语句的函数
 #########################################
+def get_conn():
+	try:
+		conn.ping()
+	except Exception,e:
+		conn = conn = MySQLdb.connect(config["db_host"],config["db_user"], 
+							config["db_passwd"],config["db_name"],charset='utf8mb4')
+	return conn
+
 def execute(sql_stat,params=None):
+	conn = get_conn()
 	cursor = conn.cursor()
 	cursor.execute(sql_stat,params)
 	conn.commit()
 	cursor.close()
 
 def select_one(sql_stat, params,none_return_value=None):
+	conn = get_conn()
 	cursor = conn.cursor()
 	cursor.execute(sql_stat,params)
 	result = cursor.fetchone()

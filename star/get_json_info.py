@@ -73,7 +73,7 @@ def _get_last_fetch(prj,dataType):
 	return last_page, last_data_set
 
 
-def _fetchJson4Prj(prj, dataType):
+def _fetchIssueJson4Prj(prj, dataType):
 
 	last_page, last_data_set = _get_last_fetch(prj,dataType)
 
@@ -126,7 +126,7 @@ def fetchThread():
 			lock.release()
 
 		# _fetchJson(prj, "issues")
-		_fetchJson4Prj(prj, "pulls")
+		_fetchIssueJson4Prj(prj, "pulls")
 
 		lock.acquire()
 		try:

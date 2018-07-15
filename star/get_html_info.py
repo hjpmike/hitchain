@@ -29,6 +29,15 @@ def readPrjLists():
 			REPO_ID[prjls[1]] = int(prjls[0])
 	return prjs
 
+def _uni_field(field):
+	# contributor,release,commit,branch 存在单复数区别
+	if not field.endswith("s"):
+		if field.endswith("h"):
+			return field + "es"
+		else:
+			return field + "s"
+	else:
+		return field
 
 def extract_html(prj,ini_html):
 	nums = {}
@@ -49,7 +58,7 @@ def extract_html(prj,ini_html):
 	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
 	for lia in lis:
 		try:
-			tmp_txt = lia.xpath("./text()")[-1].strip()
+			tmp_txt = _uni_field(lia.xpath("./text()")[-1].strip())
 			tmp_num = lia.xpath("./span")[0].text.strip()
 			nums[tmp_txt] = tmp_num.replace(",","")
 		except Exception,e:

@@ -37,6 +37,7 @@ def select_one(sql_stat, params,none_return_value=None):
 		return result
 
 def select_all(sql_stat,params=None):
+	conn = get_conn()
 	cursor = conn.cursor()
 	cursor.execute(sql_stat,params)
 	result = cursor.fetchall()
@@ -95,6 +96,7 @@ def createIssueInfo():
 #### funcs created for get_html_info.py
 #########################################
 def storeHtmlError(repo_id,error_msg):
+	conn = get_conn()
 	cursor = conn.cursor()
 	sql_stat = "insert into html_error(repo_id,error_msg) values(%s,'%s')"%(repo_id,error_msg)
 	cursor.execute(sql_stat)
@@ -102,6 +104,7 @@ def storeHtmlError(repo_id,error_msg):
 	cursor.close()
 
 def storeHtmlNums(repo_id, nums):
+	conn = get_conn()
 	cursor = conn.cursor()
 	fields = nums.keys()
 	values = [nums[field] for field in fields]

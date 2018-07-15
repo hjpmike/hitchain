@@ -42,7 +42,7 @@ def _get_url(url,retry_times=3):
 		error_msg = None
 		result = urllib2.urlopen(req,timeout=20)
 		raw_data = result.read().decode('utf-8')
-		logger.info("%s\t: download%s:%s"%(threading.current_thread().name,url,token[1:8]))
+		logger.info("%s: download:\t%s:%s"%(threading.current_thread().name,url,token[1:8]))
 	except urllib2.HTTPError, e:
 		error_msg = e.code
 	except urllib2.URLError, e:

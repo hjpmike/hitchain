@@ -5,22 +5,18 @@ tokens =[
 "16c32f5f65f9799beb489b910b6de5d8e9725c7b"
 ]
 
-import threading
-token_lock = threading.RLock()
-
+import Queue
+TOKEN_POOL = Queue.Queue()
+for token in tokens:
+	TOKEN_POOL.put(token)
 
 def get_token():
-	token_lock.acquire()
-	if len(tokens) == 0:
+	if TOKEN_POOL.empty():
 		return None
-	token = tokens.pop(0)
+	token = TOKEN_POOL.get()
 	# !!!!应该判断该token是否还有访问机会，否则再放回池子里
-	token_lock.release()
 	return token
 
 def push_token(token):
-	token_lock.acquire()
-	tokens.append(token)
-	token_lock.release()
-	return token
+	TOKEN_POOL.put(token)
 

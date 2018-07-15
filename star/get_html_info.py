@@ -39,8 +39,9 @@ def _uni_field(field):
 	else:
 		return field
 
-def extract_html(prj,ini_html):
+def _extract_html(ini_html):
 	nums = {}
+	errors = []
 	# watch,star,fork
 	lis = etree.HTML(ini_html).xpath('//*/ul[@class="pagehead-actions"]/li')
 	# !!! 应该要判断该规则是否还有效
@@ -50,26 +51,24 @@ def extract_html(prj,ini_html):
 			tmp_num = li.xpath("./a[2]/text()")[0].strip()
 			nums[tmp_text] = tmp_num.replace(",", "")
 		except Exception,e:
-			logger.error(e)
-			dbop.storeHtmlError(REPO_ID[prj],e)
+			logger.error("\t\t\tstar-fork-watch:%s"%e)
+			errors.append("star-fork-watch:%s"%e)
 	
 	#contributor,release,commit,branch
 	# # !!! 应该要判断该规则是否还有效
 	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
-	for lia in lis:
+	for lia in lis[0:-1]:
 		try:
 			tmp_txt = _uni_field(lia.xpath("./text()")[-1].strip())
 			tmp_num = lia.xpath("./span")[0].text.strip()
 			nums[tmp_txt] = tmp_num.replace(",","")
 		except Exception,e:
-			if(tmp_txt != "mit"):
-				logger.error(e)
-				dbop.storeHtmlError(REPO_ID[prj],e)
+			logger.error("\t\t\tommitj-branch:%s"%e)
+			errors.append("commitj-branch:%s"%e)
 	
-	dbop.storeHtmlNums(REPO_ID[prj],nums)
+	return nums,errors
 
-def fetchHtmlInfo(prj):
-	url = "https://github.com/%s"%prj
+def _get_url(url,retry_times=3):
 	req = urllib2.Request(url)
 	try:
 		error_msg = None
@@ -83,17 +82,44 @@ def fetchHtmlInfo(prj):
 		error_msg = e.message
 
 	if error_msg != None:
-		# !!!!!应该持久化 错误信息
 		logger.error("error_msg:\t%s,%s"%(error_msg,url))
-		dbop.storeHtmlError(REPO_ID[prj],error_msg)
-		return
+		if retry_times > 0:
+			return _get_url(url,retry_times-1)
+		else:
+			return (None, error_msg)
+	return (ini_html,)
 
-	extract_html(prj,ini_html)
+def fetchHtmlInfo(prj):
+
+	logger.info("\t\tfetchHtmlInfo:%s"%(prj))
+	# 下载
+	logger.info("\t\t download")
+	url = "https://github.com/%s"%prj
+	url_result = _get_url(url)
+	if url_result[0] is None:
+		dbop.execute("insert into html_error(repo_id,error_msg) values(%s,'%s')",(REPO_ID[prj],url_result[1]))
+		return 
+
+	logger.info("\t\t extract")
+	# 抽取
+	ini_html = url_result[0]
+	nums, errors = _extract_html(ini_html)
+
+	logger.info("\t\t store")
+	# 持久化
+	fields = nums.keys()
+	if len(fields) > 0:
+		values = [nums[field] for field in fields]
+		values.insert(0,"%d"%REPO_ID[prj])
+		dbop.execute("insert into html_info(repo_id," + ",".join(fields) + ") values(%s" + ",%s"*len(fields) +")",(values))
+	for error in errors:
+		dbop.execute("insert into html_error(repo_id,error_msg) values(%s,%s)",(REPO_ID[prj],error))
+
 
 def main():
+	logger.info(">>>>>get_html_info begins to work")
 	while True:
-
-		logger.info("start another round of work")
+		logger.info("\tstart another round of work")
 		# 爬完历史信息后，每个一天更新一次
 		start_time = time.time()
 
@@ -104,7 +130,7 @@ def main():
 		end_time = time.time()
 		work_time = end_time - start_time
 		if work_time < INTERVAL_TIME:
-			logger.info("not enough interval, sleep a while")
+			logger.info("\tnot enough interval, sleep a while")
 			time.sleep(INTERVAL_TIME - work_time)
 
 

@@ -11,8 +11,8 @@ import sys
 import dbop
 from config import config
 import gh_token_pool
+import Queue
 import threading
-lock = threading.RLock()
 
 logger = logging.getLogger()
 hdlr = logging.FileHandler("log/get_json_info.log")
@@ -23,8 +23,8 @@ logger.setLevel(logging.NOTSET)
 
 INTERVAL_TIME = config["json_fetch_interval"]
 REPO_ID = {}
-PRJS = []
-PRJS_DONE = [] #多线程干完活后放到这个里面
+PRJS = Queue.Queue()
+PRJS_DONE = Queue.Queue() #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
 URL_TEMPLATE = "https://api.github.com/repos/%s/%s?page=%d&per_page=100&state=all&direction=asc"
 
@@ -33,7 +33,9 @@ def _get_url(url,retry_times=3):
 	send_headers = {"Content-Type":"application/json","Authorization":"*"}
 	token = gh_token_pool.get_token()
 	if token is None:
+		logger.info("\t\t%s: token is none"%(threading.current_thread().name,))
 		return None,None
+
 	send_headers['Authorization'] = 'token %s'%(token,)
 	gh_token_pool.push_token(token)
 
@@ -42,7 +44,7 @@ def _get_url(url,retry_times=3):
 		error_msg = None
 		result = urllib2.urlopen(req,timeout=20)
 		raw_data = result.read().decode('utf-8')
-		logger.info("%s: download:\t%s:%s"%(threading.current_thread().name,url,token[1:8]))
+		logger.info("\t\t%s: downloaded:\t%s:%s"%(threading.current_thread().name,url[28:-37],token[1:8]))
 	except urllib2.HTTPError, e:
 		error_msg = e.code
 	except urllib2.URLError, e:
@@ -52,11 +54,11 @@ def _get_url(url,retry_times=3):
 		
 	if error_msg != None:
 		dbop.execute("insert into json_error(url,error) values(%s,%s)", (url, error_msg))
-		logger.info("%s: error_msg:\t%s,%s:%s"%(threading.current_thread().name,error_msg,url,token[1:8]))
+		logger.info("\t\t%s: error_msg:\t%s,%s:%s"%(threading.current_thread().name,error_msg,url[28:-37],token[1:8]))
 		if retry_times == 0:
 			return None,None
 		else:
-			logger.info("%s: retry:\t%s:%s"%(threading.current_thread().name,url,token[1:8]))
+			logger.info("\t\t%s: retry:\t%s:%s"%(threading.current_thread().name,url[28:-37],token[1:8]))
 			return _get_url(url,retry_times-1)
 	
 	return result, raw_data
@@ -76,8 +78,10 @@ def _get_last_fetch(prj,dataType):
 def _fetchIssueJson4Prj(prj, dataType):
 
 	last_page, last_data_set = _get_last_fetch(prj,dataType)
-
+	logger.info("\t\t%s:%s last page:%s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
 	while last_page is not None:
+		
+		# 下载原始并存储原始数据
 		url =  URL_TEMPLATE%(prj,dataType,last_page)
 		result, raw_json = _get_url(url)
 		if result is None:
@@ -87,10 +91,12 @@ def _fetchIssueJson4Prj(prj, dataType):
 							REPO_ID[prj], last_page, raw_json))
 		new_data_set = json.loads(raw_json)
 
+		# 抽取
+		logger.info("\t\t%s:%s new page:%s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
 		for n_data in new_data_set:
-
 			if n_data["number"] not in last_data_set:
-				dbop.execute("insert into " + "%s_info"%dataType + "(repo_id,number,page,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s)", 
+				dbop.execute("insert into " + "%s_info"%dataType + 
+						"(repo_id,number,page,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s)", 
 					( REPO_ID[prj],n_data["number"],last_page,n_data["created_at"],
 									n_data["closed_at"],n_data["user"]["id"],n_data["user"]["login"]
 					))
@@ -101,39 +107,32 @@ def _fetchIssueJson4Prj(prj, dataType):
 
 		# 获取下一个列表页url
 		if 'link' not in result.headers.keys():
-			logger.info("%s: maybe %s has less 100 prs"%(threading.current_thread().name, prj))
+			logger.info("\t\t%s: %s maybe has less 100 prs"%(threading.current_thread().name, prj))
 			break
 		links = result.headers["link"]
 		if "next" in links:
 			last_page += 1
 		else:
 			last_page = None
-			logger.info("%s: %s %s"%(threading.current_thread().name,prj, "no next link any more",))
+			logger.info("\t\t%s: %s no longer have next link"%(threading.current_thread().name,prj))
 		
 
 
 def fetchThread():
-	logger.info("%s start to work"%( threading.current_thread().name))
+	logger.info("\t\t%s starts to work"%( threading.current_thread().name))
 	while True:
-		lock.acquire()
 		try:
-			prj = PRJS.pop(0)
-			logger.info("%s fetch %s"%( threading.current_thread().name,prj))
+			prj = PRJS.get()
+			logger.info("\t\t  %s fetch %s"%( threading.current_thread().name,prj))
 		except Exception,e:
-			logger.info("%s no more prjs"%( threading.current_thread().name))
+			logger.info("\t\t  %s no more prjs"%( threading.current_thread().name))
 			break 
-		finally:
-			lock.release()
 
 		# _fetchJson(prj, "issues")
 		_fetchIssueJson4Prj(prj, "pulls")
 
-		lock.acquire()
-		try:
-			PRJS_DONE.append(prj)
-		finally:
-			lock.release()
-
+		PRJS_DONE.put(prj)
+	
 
 def fetchJsonInfo():
 	global PRJS_DONE, PRJS
@@ -144,9 +143,9 @@ def fetchJsonInfo():
 		threading_num = int(sys.argv[1])
 
 	thread_list = [] 
-	if threading_num > len(PRJS):
-		threading_num = len(PRJS)
-
+	if threading_num > PRJS.qsize():
+		threading_num = PRJS.qsize()
+	logger.info("\tthreads number:%d"%(threading_num,))
 	for i in range(0,threading_num):
 		t = threading.Thread(target=fetchThread,name="Thread-%d"%i)
 		thread_list.append(t)
@@ -156,49 +155,47 @@ def fetchJsonInfo():
 	for thread in thread_list:
 		thread.join()
 
-	logger.info("all threads done work")
+	logger.info("\tall threads done work")
 	PRJS = PRJS_DONE
-	PRJS_DONE = []
+	PRJS_DONE = Queue.Queue()
 
 	
 def readPrjLists():
-	prjs = []
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls = [item.strip() for item in prj_line.split("\t")]
-			prjs.append(prjls[1])
+			PRJS.put(prjls[1])
 			REPO_ID[prjls[1]] = int(prjls[0])
-	return prjs
 
 def main():
 	global PRJS
+	logger.info(">>>>>get_json_info begins to work")
 	while True:
 
-		logger.info("start another round of work")
-		# 爬完历史信息后，每个一天更新一次
+		logger.info("\tstart another round of work")
+		# 爬完历史信息后，每个一天更新一次e3edx 
 		start_time = time.time()
 
-		PRJS = readPrjLists()
+		readPrjLists()
 		fetchJsonInfo()
 		
 		end_time = time.time()
 		work_time = end_time - start_time
 		if work_time < INTERVAL_TIME:
-			logger.info("not enough interval, sleep a while")
+			logger.info("\tnot enough interval, sleep a while")
 			time.sleep(INTERVAL_TIME - work_time)
 
-def launchTokenPool():
-	pass
+
 def createTable():
+	logger.info("\tcreate tables")
 	dbop.createJsonRaw("pulls")
 	dbop.createJsonRaw("issues")
 	dbop.createPrInfo()
 	dbop.createIssueInfo()
 
 def init():
-	# 启动token池 
-	launchTokenPool()
 	# 创建表
+	logger.info("init...")
 	createTable()
 if __name__ == '__main__':
 	init()

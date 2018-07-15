@@ -63,7 +63,7 @@ def _get_url(url,retry_times=3):
 	
 	return result, raw_data
 
-def _get_last_fetch(prj,dataType):
+def _get_last_issue_fetch(prj,dataType):
 	# 获取上次记录，以及上次获得数据集合
 	last_page = dbop.select_one("select page from " + "%s_json_raw"%dataType + " where repo_id=%s order by id desc limit 1",
 								(REPO_ID[prj],), (1,))[0]
@@ -77,8 +77,8 @@ def _get_last_fetch(prj,dataType):
 
 def _fetchIssueJson4Prj(prj, dataType):
 
-	last_page, last_data_set = _get_last_fetch(prj,dataType)
-	logger.info("\t\t%s:%s last page:%s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
+	last_page, last_data_set = _get_last_issue_fetch(prj,dataType)
+	logger.info("\t\t%s:%s last %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(last_data_set)))
 	while last_page is not None:
 		
 		# 下载原始并存储原始数据
@@ -92,7 +92,7 @@ def _fetchIssueJson4Prj(prj, dataType):
 		new_data_set = json.loads(raw_json)
 
 		# 抽取
-		logger.info("\t\t%s:%s new page:%s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
+		logger.info("\t\t%s:%s new %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["number"] not in last_data_set:
 				dbop.execute("insert into " + "%s_info"%dataType + 
@@ -107,29 +107,79 @@ def _fetchIssueJson4Prj(prj, dataType):
 
 		# 获取下一个列表页url
 		if 'link' not in result.headers.keys():
-			logger.info("\t\t%s: %s maybe has less 100 prs"%(threading.current_thread().name, prj))
+			logger.info("\t\t%s: %s maybe has less 100 %s"%(threading.current_thread().name, prj,dataType))
 			break
 		links = result.headers["link"]
 		if "next" in links:
 			last_page += 1
 		else:
 			last_page = None
-			logger.info("\t\t%s: %s no longer have next link"%(threading.current_thread().name,prj))
+			logger.info("\t\t%s: %s no longer have next link for %s"%(threading.current_thread().name,prj,dataType))
 		
+def _get_last_release_fetch(prj):
+	last_page = dbop.select_one("select page from release_json_raw where repo_id=%s order by id desc limit 1",
+								(REPO_ID[prj],), (1,))[0]
+	last_data_set = set([ item[0] for item in 
+						dbop.select_all("select r_id from release_info where repo_id=%s and page =%s", (
+							REPO_ID[prj],last_page))])
+	
+	return last_page, last_data_set
 
+def _fetchReleaseJson4Prj(prj):
+	last_page, last_data_set = _get_last_release_fetch(prj)
+	logger.info("\t\t%s:%s last release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
+
+	# !! release table (id,repo_id,r_id,tag_name,name,author_id,author_name,created_at,published_at)
+	####》》》》》》》》》
+	while last_page is not None:
+		
+		# 下载原始并存储原始数据
+		url =  URL_TEMPLATE%(prj,"releases",last_page)
+		result, raw_json = _get_url(url)
+		if result is None:
+			break
+
+		dbop.execute("insert into release_json_raw(repo_id, page, raw) values(%s,%s,%s)", (
+							REPO_ID[prj], last_page, raw_json))
+		new_data_set = json.loads(raw_json)
+
+		# 抽取
+		logger.info("\t\t%s:%s new release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
+		for n_data in new_data_set:
+			if n_data["id"] not in last_data_set:
+				dbop.execute("insert into release_info(" + 
+								"repo_id,r_id,page,tag_name,name,created_at,published_at,author_id,author_name)" + 
+								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
+								( REPO_ID[prj],n_data["id"],last_page,n_data["tag_name"],n_data["name"],n_data["created_at"],
+								n_data["published_at"],n_data["author"]["id"],n_data["author"]["login"]))
+			
+		# 以后的last_data_set 应该为空
+		last_data_set = []
+
+		# 获取下一个列表页url
+		if 'link' not in result.headers.keys():
+			logger.info("\t\t%s: %s maybe has less 100 releases"%(threading.current_thread().name, prj))
+			break
+		links = result.headers["link"]
+		if "next" in links:
+			last_page += 1
+		else:
+			last_page = None
+			logger.info("\t\t%s: %s no longer have next link for releases"%(threading.current_thread().name,prj))
 
 def fetchThread():
 	logger.info("\t\t%s starts to work"%( threading.current_thread().name))
 	while True:
 		try:
 			prj = PRJS.get()
-			logger.info("\t\t  %s fetch %s"%( threading.current_thread().name,prj))
+			logger.info("\t\t%s fetch %s"%( threading.current_thread().name,prj))
 		except Exception,e:
-			logger.info("\t\t  %s no more prjs"%( threading.current_thread().name))
+			logger.info("\t\t%s no more prjs"%( threading.current_thread().name))
 			break 
 
 		# _fetchJson(prj, "issues")
-		_fetchIssueJson4Prj(prj, "pulls")
+		# _fetchIssueJson4Prj(prj, "pulls")
+		_fetchReleaseJson4Prj(prj)
 
 		PRJS_DONE.put(prj)
 	
@@ -188,10 +238,17 @@ def main():
 
 def createTable():
 	logger.info("\tcreate tables")
-	dbop.createJsonRaw("pulls")
-	dbop.createJsonRaw("issues")
+	dbop.createJsonError()
+
+	dbop.createIssueJsonRaw("pulls")
+	dbop.createIssueJsonRaw("issues")
 	dbop.createPrInfo()
 	dbop.createIssueInfo()
+
+	dbop.createReleaseJsonRaw()
+	dbop.createReleaseInfo()
+
+
 
 def init():
 	# 创建表

@@ -2,20 +2,27 @@
 
 from config import config
 import MySQLdb
-
-conn = MySQLdb.connect(config["db_host"],config["db_user"], 
-							config["db_passwd"],config["db_name"],charset='utf8mb4')
+import Queue
 
 #########################################
 ### 一些可以执行简单sql语句的函数
 #########################################
+THREAD_POOL = Queue.Queue()
+for i in range(0,config["db_conn_pool_size"]):
+	conn =  MySQLdb.connect(config["db_host"],config["db_user"], 
+							config["db_passwd"],config["db_name"],charset='utf8mb4')
+	THREAD_POOL.put(conn)
 def get_conn():
+	conn = THREAD_POOL.get()
 	try:
 		conn.ping()
 	except Exception,e:
-		conn = conn = MySQLdb.connect(config["db_host"],config["db_user"], 
+		conn = MySQLdb.connect(config["db_host"],config["db_user"], 
 							config["db_passwd"],config["db_name"],charset='utf8mb4')
+		THREAD_POOL.put(conn)
 	return conn
+def put_conn(conn):
+	THREAD_POOL.put(conn)	
 
 def execute(sql_stat,params=None):
 	conn = get_conn()
@@ -23,6 +30,7 @@ def execute(sql_stat,params=None):
 	cursor.execute(sql_stat,params)
 	conn.commit()
 	cursor.close()
+	put_conn(conn)
 
 def select_one(sql_stat, params,none_return_value=None):
 	conn = get_conn()
@@ -31,6 +39,7 @@ def select_one(sql_stat, params,none_return_value=None):
 	result = cursor.fetchone()
 	conn.commit()
 	cursor.close()
+	put_conn(conn)
 	if result is None:
 		return none_return_value
 	else:
@@ -43,6 +52,7 @@ def select_all(sql_stat,params=None):
 	result = cursor.fetchall()
 	conn.commit()
 	cursor.close()
+	put_conn(conn)
 	return result
 
 #########################################
@@ -95,25 +105,6 @@ def createIssueInfo():
 #########################################
 #### funcs created for get_html_info.py
 #########################################
-def storeHtmlError(repo_id,error_msg):
-	conn = get_conn()
-	cursor = conn.cursor()
-	sql_stat = "insert into html_error(repo_id,error_msg) values(%s,'%s')"%(repo_id,error_msg)
-	cursor.execute(sql_stat)
-	conn.commit()
-	cursor.close()
-
-def storeHtmlNums(repo_id, nums):
-	conn = get_conn()
-	cursor = conn.cursor()
-	fields = nums.keys()
-	values = [nums[field] for field in fields]
-	values.insert(0,"%d"%repo_id)
-
-	sql_stat = "insert into html_info(repo_id,%s) values(%s)"%(",".join(fields), ",".join(values))
-	cursor.execute(sql_stat)
-	cursor.close()
-
 def createHtmlError():
 	html_error_sql = '''
 		CREATE TABLE IF NOT EXISTS`html_error` (

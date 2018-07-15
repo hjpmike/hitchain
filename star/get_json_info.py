@@ -10,6 +10,7 @@ import logging
 import sys
 import dbop
 from config import config
+import gh_token_pool
 import threading
 lock = threading.RLock()
 
@@ -27,16 +28,21 @@ PRJS_DONE = [] #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
 URL_TEMPLATE = "https://api.github.com/repos/%s/%s?page=%d&per_page=100&state=all&direction=asc"
 
-def _get_url(url):
+def _get_url(url,retry_times=3):
 	# token池
+	send_headers = {"Content-Type":"application/json","Authorization":"*"}
+	token = gh_token_pool.get_token()
+	if token is None:
+		return None,None
+	send_headers['Authorization'] = 'token %s'%(token,)
+	gh_token_pool.push_token(token)
 
-	# !!!! 如果出错了，应该重试几次
-	req = urllib2.Request(url)
+	req = urllib2.Request(url,headers = send_headers)
 	try:
 		error_msg = None
 		result = urllib2.urlopen(req,timeout=20)
 		raw_data = result.read().decode('utf-8')
-		logger.info("\t: %s"%(url,))
+		logger.info("%s\t: download%s:%s"%(threading.current_thread().name,url,token[1:8]))
 	except urllib2.HTTPError, e:
 		error_msg = e.code
 	except urllib2.URLError, e:
@@ -46,8 +52,12 @@ def _get_url(url):
 		
 	if error_msg != None:
 		dbop.execute("insert into json_error(url,error) values(%s,%s)", (url, error_msg))
-		logger.info("%s: error_msg:\t%s,%s"%(threading.current_thread().name,error_msg,url,))
-		return None,None
+		logger.info("%s: error_msg:\t%s,%s:%s"%(threading.current_thread().name,error_msg,url,token[1:8]))
+		if retry_times == 0:
+			return None,None
+		else:
+			logger.info("%s: retry:\t%s:%s"%(threading.current_thread().name,url,token[1:8]))
+			return _get_url(url,retry_times-1)
 	
 	return result, raw_data
 
@@ -63,7 +73,7 @@ def _get_last_fetch(prj,dataType):
 	return last_page, last_data_set
 
 
-def _fetchJson(prj, dataType):
+def _fetchJson4Prj(prj, dataType):
 
 	last_page, last_data_set = _get_last_fetch(prj,dataType)
 
@@ -116,7 +126,7 @@ def fetchThread():
 			lock.release()
 
 		# _fetchJson(prj, "issues")
-		_fetchJson(prj, "pulls")
+		_fetchJson4Prj(prj, "pulls")
 
 		lock.acquire()
 		try:

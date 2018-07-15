@@ -82,7 +82,7 @@ def _get_url(url,retry_times=3):
 		error_msg = e.message
 
 	if error_msg != None:
-		logger.error("error_msg:\t%s,%s"%(error_msg,url))
+		logger.error("\t\t\t error:\t%s,%s"%(error_msg,url))
 		if retry_times > 0:
 			return _get_url(url,retry_times-1)
 		else:

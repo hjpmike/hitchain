@@ -127,7 +127,7 @@ def _get_last_release_fetch(prj):
 	return last_page, last_data_set
 def _fetchReleaseJson4Prj(prj):
 	last_page, last_data_set = _get_last_release_fetch(prj)
-	logger.info("\t\t%s:%s last release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
+	logger.info("\t\t%s: %s last release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
 
 	while last_page is not None:
 		
@@ -142,7 +142,7 @@ def _fetchReleaseJson4Prj(prj):
 		new_data_set = json.loads(raw_json)
 
 		# 抽取
-		logger.info("\t\t%s:%s new release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
+		logger.info("\t\t%s: %s new release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["id"] not in last_data_set:
 				dbop.execute("insert into releases_info(" + 
@@ -232,7 +232,7 @@ def fetchThread():
 	logger.info("\t\t%s: starts to work"%( threading.current_thread().name))
 	while True:
 		try:
-			prj = PRJS.get()
+			prj = PRJS.get(block=False)
 			logger.info("\t\t%s: fetch %s"%( threading.current_thread().name,prj))
 		except Exception,e:
 			logger.info("\t\t%s: no more prjs"%( threading.current_thread().name))

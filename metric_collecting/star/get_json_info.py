@@ -63,41 +63,42 @@ def _get_url(url,retry_times=3):
 	
 	return result, raw_data
 
-def _get_last_issue_fetch(prj,dataType):
+def _get_last_issue_fetch(prj):
 	# 获取上次记录，以及上次获得数据集合
-	last_page = dbop.select_one("select page from " + "%s_json_raw"%dataType + " where repo_id=%s order by id desc limit 1",
+	last_page = dbop.select_one("select page from issues_json_raw  where repo_id=%s order by id desc limit 1",
 								(REPO_ID[prj],), (1,))[0]
 	last_data_set = set([ item[0] for item in 
-						dbop.select_all("select number from " +"%s_info"%dataType + " where repo_id=%s and page =%s", (
+						dbop.select_all("select number from issues_info where repo_id=%s and page =%s", (
 							REPO_ID[prj],last_page))
 						])
 	
 	return last_page, last_data_set
+def _fetchIssueJson4Prj(prj):
 
-
-def _fetchIssueJson4Prj(prj, dataType):
-
-	last_page, last_data_set = _get_last_issue_fetch(prj,dataType)
-	logger.info("\t\t%s: %s last %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(last_data_set)))
+	last_page, last_data_set = _get_last_issue_fetch(prj)
+	logger.info("\t\t%s: %s last issue page:%s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
 	while last_page is not None:
 		
 		# 下载原始并存储原始数据
-		url =  URL_TEMPLATE%(prj,dataType,last_page)
+		url =  URL_TEMPLATE%(prj,"issues",last_page)
 		result, raw_json = _get_url(url)
 		if result is None:
 			break
 
-		dbop.execute("insert into " + "%s_json_raw"%dataType +"(repo_id, page, raw) values(%s,%s,%s)", (
+		dbop.execute("insert into issues_json_raw(repo_id, page, raw) values(%s,%s,%s)", (
 							REPO_ID[prj], last_page, raw_json))
 		new_data_set = json.loads(raw_json)
 
 		# 抽取
-		logger.info("\t\t%s: %s new %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(new_data_set)))
+		logger.info("\t\t%s: %s new issue page:%s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["number"] not in last_data_set:
-				dbop.execute("insert into " + "%s_info"%dataType + 
-						"(repo_id,number,page,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s)", 
-					( REPO_ID[prj],n_data["number"],last_page,n_data["created_at"],
+				is_pr = 0
+				if "pull_request" in n_data.keys():
+					is_pr = 1
+				dbop.execute("insert into issues_info" + 
+						"(repo_id,number,page,is_pr,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s,%s)", 
+					( REPO_ID[prj],n_data["number"],last_page,is_pr,n_data["created_at"],
 									n_data["closed_at"],n_data["user"]["id"],n_data["user"]["login"]
 					))
 			
@@ -107,14 +108,14 @@ def _fetchIssueJson4Prj(prj, dataType):
 
 		# 获取下一个列表页url
 		if 'link' not in result.headers.keys():
-			logger.info("\t\t%s: %s maybe has less 100 %s"%(threading.current_thread().name, prj,dataType))
+			logger.info("\t\t%s: %s maybe has less 100 isse"%(threading.current_thread().name, prj))
 			break
 		links = result.headers["link"]
 		if "next" in links:
 			last_page += 1
 		else:
 			last_page = None
-			logger.info("\t\t%s: %s no longer have next link for %s"%(threading.current_thread().name,prj,dataType))
+			logger.info("\t\t%s: %s no longer have next link for issue"%(threading.current_thread().name,prj))
 		
 def _get_last_release_fetch(prj):
 	last_page = dbop.select_one("select page from releases_json_raw where repo_id=%s order by id desc limit 1",
@@ -124,7 +125,6 @@ def _get_last_release_fetch(prj):
 							REPO_ID[prj],last_page))])
 	
 	return last_page, last_data_set
-
 def _fetchReleaseJson4Prj(prj):
 	last_page, last_data_set = _get_last_release_fetch(prj)
 	logger.info("\t\t%s:%s last release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
@@ -174,7 +174,6 @@ def _get_last_commit_fetch(prj):
 							REPO_ID[prj],last_page))])
 	
 	return last_page, last_data_set
-
 def _fetchCommitJson4prj(prj):
 	last_page, last_data_set = _get_last_commit_fetch(prj)
 	logger.info("\t\t%s: %s last commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
@@ -239,8 +238,7 @@ def fetchThread():
 			logger.info("\t\t%s: no more prjs"%( threading.current_thread().name))
 			break 
 
-		_fetchIssueJson4Prj(prj, "issues")
-		_fetchIssueJson4Prj(prj, "pulls")
+		_fetchIssueJson4Prj(prj)
 		_fetchReleaseJson4Prj(prj)
 		_fetchCommitJson4prj(prj)
 
@@ -303,9 +301,7 @@ def createTable():
 	logger.info("\tcreate tables")
 	dbop.createJsonError()
 
-	dbop.createIssueJsonRaw("pulls")
-	dbop.createIssueJsonRaw("issues")
-	dbop.createPrInfo()
+	dbop.createIssueJsonRaw()
 	dbop.createIssueInfo()
 
 	dbop.createReleaseJsonRaw()

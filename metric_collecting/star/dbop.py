@@ -71,8 +71,6 @@ def createCommitJsonRaw():
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
 		'''
 	execute(sql_stat)
-
-
 def createCommitInfo():
 	sql_stat = '''
 		CREATE TABLE IF NOT EXISTS `commits_info` (
@@ -105,8 +103,6 @@ def createReleaseJsonRaw():
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
 		'''
 	execute(sql_stat)
-
-
 def createReleaseInfo():
 	sql_stat = '''
 		CREATE TABLE IF NOT EXISTS `releases_info` (
@@ -125,9 +121,9 @@ def createReleaseInfo():
 		'''
 	execute(sql_stat)
 
-def createIssueJsonRaw(data_type):
+def createIssueJsonRaw():
 	sql_stat = '''
-		CREATE TABLE IF NOT EXISTS `%s_json_raw` (
+		CREATE TABLE IF NOT EXISTS `issues_json_raw` (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
 		`page` int(11) DEFAULT NULL,
@@ -135,8 +131,25 @@ def createIssueJsonRaw(data_type):
 		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
-		'''%(data_type)
+		'''
 	execute(sql_stat)
+def createIssueInfo():
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `issues_info` (
+			`id` int(11) NOT NULL AUTO_INCREMENT,
+			`repo_id` int(11) DEFAULT NULL,
+			`page` int(11) DEFAULT NULL,
+			`number` int(11) DEFAULT NULL,
+			`is_pr` tinyint(1) DEFAULT NULL,
+			`created_at` varchar(20) DEFAULT NULL,
+			`closed_at` varchar(20) DEFAULT NULL,
+			`user_id` int(11) DEFAULT NULL,
+			`user_name` varchar(500) DEFAULT NULL,
+			PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+		'''
+	execute(sql_stat)
+
 
 def createJsonError():
 	sql_stat = '''
@@ -146,38 +159,6 @@ def createJsonError():
 		`error` varchar(500) DEFAULT NULL,
 		`error_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=latin1
-		'''
-	execute(sql_stat)
-
-def createPrInfo():
-	sql_stat = '''
-		CREATE TABLE IF NOT EXISTS `pulls_info` (
-			`id` int(11) NOT NULL AUTO_INCREMENT,
-			`repo_id` int(11) DEFAULT NULL,
-			`page` int(11) DEFAULT NULL,
-			`number` int(11) DEFAULT NULL,
-			`created_at` varchar(20) DEFAULT NULL,
-			`closed_at` varchar(20) DEFAULT NULL,
-			`user_id` int(11) DEFAULT NULL,
-			`user_name` varchar(500) DEFAULT NULL,
-			PRIMARY KEY (`id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=latin1
-		'''
-	execute(sql_stat)
-
-def createIssueInfo():
-	sql_stat = '''
-		CREATE TABLE IF NOT EXISTS `issues_info` (
-			`id` int(11) NOT NULL AUTO_INCREMENT,
-			`repo_id` int(11) DEFAULT NULL,
-			`page` int(11) DEFAULT NULL,
-			`number` int(11) DEFAULT NULL,
-			`created_at` varchar(20) DEFAULT NULL,
-			`closed_at` varchar(20) DEFAULT NULL,
-			`user_id` int(11) DEFAULT NULL,
-			`user_name` varchar(500) DEFAULT NULL,
-			PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 		'''
 	execute(sql_stat)

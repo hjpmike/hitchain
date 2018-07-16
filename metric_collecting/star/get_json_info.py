@@ -177,7 +177,7 @@ def _get_last_commit_fetch(prj):
 
 def _fetchCommitJson4prj(prj):
 	last_page, last_data_set = _get_last_commit_fetch(prj)
-	logger.info("\t\t%s:%s last commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
+	logger.info("\t\t%s: %s last commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
 
 	# commit(id,repo_id,sha,author_id,author_name,author_date,committer_id,committer_name,committer_date,parent)
 	while last_page is not None:
@@ -193,20 +193,20 @@ def _fetchCommitJson4prj(prj):
 		new_data_set = json.loads(raw_json)
 
 		# 抽取
-		logger.info("\t\t%s:%s new commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
+		logger.info("\t\t%s: %s new commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["sha"] not in last_data_set:
 				parents_sha = ";".join([parent["sha"] for parent in n_data["parents"]])
 				author = n_data["author"] # author在github的用户名有时为空
-				if author is None:
-					author_id,author_name = None,None
-				else:
+				if author is not None and len(author)>0:
 					author_id,author_name = author["id"],author["login"]
-				committer = n_data["committer"]
-				if committer is None:
-					commit_id,commiter_name = None,None
 				else:
+					author_id,author_name = None,None
+				committer = n_data["committer"]
+				if committer is not None and len(committer)>0:
 					commit_id,commiter_name = committer["id"],committer["login"]
+				else:
+					commit_id,commiter_name = None,None
 				dbop.execute("insert into commits_info(" + 
 								"repo_id,page,sha,author_id,author_name,author_date,committer_id,committer_name,committer_date,parents)" + 
 								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
@@ -230,18 +230,18 @@ def _fetchCommitJson4prj(prj):
 
 
 def fetchThread():
-	logger.info("\t\t%s starts to work"%( threading.current_thread().name))
+	logger.info("\t\t%s: starts to work"%( threading.current_thread().name))
 	while True:
 		try:
 			prj = PRJS.get()
-			logger.info("\t\t%s fetch %s"%( threading.current_thread().name,prj))
+			logger.info("\t\t%s: fetch %s"%( threading.current_thread().name,prj))
 		except Exception,e:
-			logger.info("\t\t%s no more prjs"%( threading.current_thread().name))
+			logger.info("\t\t%s: no more prjs"%( threading.current_thread().name))
 			break 
 
-		# _fetchIssueJson4Prj(prj, "issues")
-		# _fetchIssueJson4Prj(prj, "pulls")
-		# _fetchReleaseJson4Prj(prj)
+		_fetchIssueJson4Prj(prj, "issues")
+		_fetchIssueJson4Prj(prj, "pulls")
+		_fetchReleaseJson4Prj(prj)
 		_fetchCommitJson4prj(prj)
 
 		PRJS_DONE.put(prj)

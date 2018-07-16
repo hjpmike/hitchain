@@ -58,9 +58,44 @@ def select_all(sql_stat,params=None):
 #########################################
 #### funcs created for get_json_info.py
 #########################################
+
+def createCommitJsonRaw():
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `commits_json_raw` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`page` int(11) DEFAULT NULL,
+		`raw` longtext,
+		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
+		'''
+	execute(sql_stat)
+
+
+def createCommitInfo():
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `commits_info` (
+			`id` int(11) NOT NULL AUTO_INCREMENT,
+			`repo_id` int(11) DEFAULT NULL,
+			`page` int(11) DEFAULT NULL,
+			`sha` varchar(40) DEFAULT NULL,
+			`author_id` int(11) DEFAULT NULL,
+			`author_name` varchar(500) DEFAULT NULL,
+			`author_date` varchar(20) DEFAULT NULL,
+			`committer_id` int(11) DEFAULT NULL,
+			`committer_name` varchar(500) DEFAULT NULL,
+			`committer_date` varchar(20) DEFAULT NULL,
+			`parents` varchar(210) DEFAULT NULL,
+			PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+		'''
+	execute(sql_stat)
+
+
 def createReleaseJsonRaw():
 	sql_stat = '''
-		CREATE TABLE IF NOT EXISTS `release_json_raw` (
+		CREATE TABLE IF NOT EXISTS `releases_json_raw` (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
 		`page` int(11) DEFAULT NULL,
@@ -74,7 +109,7 @@ def createReleaseJsonRaw():
 
 def createReleaseInfo():
 	sql_stat = '''
-		CREATE TABLE IF NOT EXISTS `release_info` (
+		CREATE TABLE IF NOT EXISTS `releases_info` (
 			`id` int(11) NOT NULL AUTO_INCREMENT,
 			`repo_id` int(11) DEFAULT NULL,
 			`page` int(11) DEFAULT NULL,

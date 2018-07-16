@@ -78,7 +78,7 @@ def _get_last_issue_fetch(prj,dataType):
 def _fetchIssueJson4Prj(prj, dataType):
 
 	last_page, last_data_set = _get_last_issue_fetch(prj,dataType)
-	logger.info("\t\t%s:%s last %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(last_data_set)))
+	logger.info("\t\t%s: %s last %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(last_data_set)))
 	while last_page is not None:
 		
 		# 下载原始并存储原始数据
@@ -92,7 +92,7 @@ def _fetchIssueJson4Prj(prj, dataType):
 		new_data_set = json.loads(raw_json)
 
 		# 抽取
-		logger.info("\t\t%s:%s new %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(new_data_set)))
+		logger.info("\t\t%s: %s new %s page:%s/%s"%( threading.current_thread().name,prj,dataType,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["number"] not in last_data_set:
 				dbop.execute("insert into " + "%s_info"%dataType + 
@@ -117,10 +117,10 @@ def _fetchIssueJson4Prj(prj, dataType):
 			logger.info("\t\t%s: %s no longer have next link for %s"%(threading.current_thread().name,prj,dataType))
 		
 def _get_last_release_fetch(prj):
-	last_page = dbop.select_one("select page from release_json_raw where repo_id=%s order by id desc limit 1",
+	last_page = dbop.select_one("select page from releases_json_raw where repo_id=%s order by id desc limit 1",
 								(REPO_ID[prj],), (1,))[0]
 	last_data_set = set([ item[0] for item in 
-						dbop.select_all("select r_id from release_info where repo_id=%s and page =%s", (
+						dbop.select_all("select r_id from releases_info where repo_id=%s and page =%s", (
 							REPO_ID[prj],last_page))])
 	
 	return last_page, last_data_set
@@ -129,8 +129,6 @@ def _fetchReleaseJson4Prj(prj):
 	last_page, last_data_set = _get_last_release_fetch(prj)
 	logger.info("\t\t%s:%s last release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
 
-	# !! release table (id,repo_id,r_id,tag_name,name,author_id,author_name,created_at,published_at)
-	####》》》》》》》》》
 	while last_page is not None:
 		
 		# 下载原始并存储原始数据
@@ -139,7 +137,7 @@ def _fetchReleaseJson4Prj(prj):
 		if result is None:
 			break
 
-		dbop.execute("insert into release_json_raw(repo_id, page, raw) values(%s,%s,%s)", (
+		dbop.execute("insert into releases_json_raw(repo_id, page, raw) values(%s,%s,%s)", (
 							REPO_ID[prj], last_page, raw_json))
 		new_data_set = json.loads(raw_json)
 
@@ -147,7 +145,7 @@ def _fetchReleaseJson4Prj(prj):
 		logger.info("\t\t%s:%s new release page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
 		for n_data in new_data_set:
 			if n_data["id"] not in last_data_set:
-				dbop.execute("insert into release_info(" + 
+				dbop.execute("insert into releases_info(" + 
 								"repo_id,r_id,page,tag_name,name,created_at,published_at,author_id,author_name)" + 
 								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
 								( REPO_ID[prj],n_data["id"],last_page,n_data["tag_name"],n_data["name"],n_data["created_at"],
@@ -167,6 +165,70 @@ def _fetchReleaseJson4Prj(prj):
 			last_page = None
 			logger.info("\t\t%s: %s no longer have next link for releases"%(threading.current_thread().name,prj))
 
+
+def _get_last_commit_fetch(prj):
+	last_page = dbop.select_one("select page from commits_json_raw where repo_id=%s order by id desc limit 1",
+								(REPO_ID[prj],), (1,))[0]
+	last_data_set = set([ item[0] for item in 
+						dbop.select_all("select sha from commits_info where repo_id=%s and page =%s", (
+							REPO_ID[prj],last_page))])
+	
+	return last_page, last_data_set
+
+def _fetchCommitJson4prj(prj):
+	last_page, last_data_set = _get_last_commit_fetch(prj)
+	logger.info("\t\t%s:%s last commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(last_data_set)))
+
+	# commit(id,repo_id,sha,author_id,author_name,author_date,committer_id,committer_name,committer_date,parent)
+	while last_page is not None:
+		
+		# 下载原始并存储原始数据
+		url =  URL_TEMPLATE%(prj,"commits",last_page)
+		result, raw_json = _get_url(url)
+		if result is None:
+			break
+
+		dbop.execute("insert into commits_json_raw(repo_id, page, raw) values(%s,%s,%s)", (
+							REPO_ID[prj], last_page, raw_json))
+		new_data_set = json.loads(raw_json)
+
+		# 抽取
+		logger.info("\t\t%s:%s new commit page: %s/%s"%( threading.current_thread().name,prj,last_page,len(new_data_set)))
+		for n_data in new_data_set:
+			if n_data["sha"] not in last_data_set:
+				parents_sha = ";".join([parent["sha"] for parent in n_data["parents"]])
+				author = n_data["author"] # author在github的用户名有时为空
+				if author is None:
+					author_id,author_name = None,None
+				else:
+					author_id,author_name = author["id"],author["login"]
+				committer = n_data["committer"]
+				if committer is None:
+					commit_id,commiter_name = None,None
+				else:
+					commit_id,commiter_name = committer["id"],committer["login"]
+				dbop.execute("insert into commits_info(" + 
+								"repo_id,page,sha,author_id,author_name,author_date,committer_id,committer_name,committer_date,parents)" + 
+								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
+								( REPO_ID[prj],last_page,n_data["sha"],
+								author_id,author_name,n_data["commit"]["author"]["date"],
+								commit_id,commiter_name,n_data["commit"]["committer"]["date"],parents_sha))
+			
+		# 以后的last_data_set 应该为空
+		last_data_set = []
+
+		# 获取下一个列表页url
+		if 'link' not in result.headers.keys():
+			logger.info("\t\t%s: %s maybe has less 100 commits"%(threading.current_thread().name, prj))
+			break
+		links = result.headers["link"]
+		if "next" in links:
+			last_page += 1
+		else:
+			last_page = None
+			logger.info("\t\t%s: %s no longer have next link for commits"%(threading.current_thread().name,prj))
+
+
 def fetchThread():
 	logger.info("\t\t%s starts to work"%( threading.current_thread().name))
 	while True:
@@ -177,9 +239,10 @@ def fetchThread():
 			logger.info("\t\t%s no more prjs"%( threading.current_thread().name))
 			break 
 
-		# _fetchJson(prj, "issues")
+		# _fetchIssueJson4Prj(prj, "issues")
 		# _fetchIssueJson4Prj(prj, "pulls")
-		_fetchReleaseJson4Prj(prj)
+		# _fetchReleaseJson4Prj(prj)
+		_fetchCommitJson4prj(prj)
 
 		PRJS_DONE.put(prj)
 	
@@ -247,6 +310,10 @@ def createTable():
 
 	dbop.createReleaseJsonRaw()
 	dbop.createReleaseInfo()
+
+	dbop.createCommitInfo()
+	dbop.createCommitJsonRaw()
+
 
 
 

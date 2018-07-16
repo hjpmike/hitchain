@@ -132,7 +132,21 @@ def createPrInfo():
 	execute(sql_stat)
 
 def createIssueInfo():
-	pass
+	sql_stat = '''
+		CREATE TABLE IF NOT EXISTS `issues_info` (
+			`id` int(11) NOT NULL AUTO_INCREMENT,
+			`repo_id` int(11) DEFAULT NULL,
+			`page` int(11) DEFAULT NULL,
+			`number` int(11) DEFAULT NULL,
+			`created_at` varchar(20) DEFAULT NULL,
+			`closed_at` varchar(20) DEFAULT NULL,
+			`user_id` int(11) DEFAULT NULL,
+			`user_name` varchar(500) DEFAULT NULL,
+			PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+		'''
+	execute(sql_stat)
+
 
 #########################################
 #### funcs created for get_html_info.py

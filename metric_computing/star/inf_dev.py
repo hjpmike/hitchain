@@ -3,6 +3,7 @@
 
 from config import config
 import time
+import dbop
 import logging
 from logging.handlers import TimedRotatingFileHandler
 log_fmt = '%(asctime)s %(levelname)s(%(lineno)s): %(message)s'
@@ -31,9 +32,9 @@ def update_separate_metric():
 		if result is None:
 			logger.info("no lastest html info for repo:%s"%REPO_ID[repo])
 			continue
-		dbop.execute("update inf_dev set watch=%s,star=%s,form=%s where repo_id=%s", 
+		dbop.execute("update inf_dev set watch=%s,star=%s,fork=%s where repo_id=%s", 
 						(result[0],result[1],result[2],REPO_ID[repo]))
-		logger.info("update html info for repo:%s"%REPO_ID[repo])
+		logger.info("\t\t   update html info for repo:%s"%REPO_ID[repo])
 
 def compute_nor_metric():
 	print "update_separate_metric"
@@ -56,7 +57,6 @@ def main():
 		logger.info("\tstart another round of work")
 		start_time = time.time()
 
-		readPrjLists()
 		computeINF_DEV()
 		
 		end_time = time.time()
@@ -67,9 +67,11 @@ def main():
 
 def init():
 	logger.info("init ...")
+	readPrjLists()
 	dbop.createINF_DEV()
 	for repo in REPOS:
-		if dbop.select_one("select * inf_dev where repo_id=%s",(REPO_ID[repo],)) is None:
+		if dbop.select_one("select * from inf_dev where repo_id=%s",(REPO_ID[repo],)) is None:
+			logger.info("  init row for repo:%s"%(REPO_ID[repo]))
 			dbop.execute("insert into inf_dev(repo_id) values(%s)", 
 						(REPO_ID[repo],))
 

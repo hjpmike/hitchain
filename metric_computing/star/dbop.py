@@ -73,3 +73,18 @@ def createINF_DEV():
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
 	execute(html_info_sql)
+
+def createMaturity():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `maturity`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`issue_done` double(4,3) DEFAULT NULL,
+		`commit_total` double(4,3) DEFAULT NULL,
+		`age_dev` double(4,3) DEFAULT NULL,
+		`fans_dev` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)

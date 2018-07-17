@@ -14,12 +14,15 @@ import gh_token_pool
 import Queue
 import threading
 
+from logging.handlers import TimedRotatingFileHandler
+log_fmt = '%(asctime)s %(levelname)s(%(lineno)s): %(message)s'
+formatter = logging.Formatter(log_fmt)
+log_file_handler = TimedRotatingFileHandler(filename="log/get_json_info", when="D", interval=1, backupCount=7)
+log_file_handler.setFormatter(formatter)    
 logger = logging.getLogger()
-hdlr = logging.FileHandler("log/get_json_info.log")
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.NOTSET)
+logger.addHandler(log_file_handler)
+logger.setLevel(logging.INFO)
+
 
 INTERVAL_TIME = config["json_fetch_interval"]
 REPO_ID = {}

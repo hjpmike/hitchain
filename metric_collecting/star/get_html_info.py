@@ -10,12 +10,14 @@ from config import config
 from lxml import etree
 import dbop
 
+from logging.handlers import TimedRotatingFileHandler
+log_fmt = '%(asctime)s %(levelname)s(%(lineno)s): %(message)s'
+formatter = logging.Formatter(log_fmt)
+log_file_handler = TimedRotatingFileHandler(filename="log/get_html_info", when="D", interval=1, backupCount=7)
+log_file_handler.setFormatter(formatter)    
 logger = logging.getLogger()
-hdlr = logging.FileHandler("log/get_html_info.log")
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.NOTSET)
+logger.addHandler(log_file_handler)
+logger.setLevel(logging.INFO)
 
 
 INTERVAL_TIME = config["html_fetch_interval"]
@@ -97,7 +99,7 @@ def fetchHtmlInfo(prj):
 	url = "https://github.com/%s"%prj
 	url_result = _get_url(url)
 	if url_result[0] is None:
-		dbop.execute("insert into html_error(repo_id,error_msg) values(%s,'%s')",(REPO_ID[prj],url_result[1]))
+		dbop.execute("insert into html_error(repo_id,error_msg) values(%s,%s)",(REPO_ID[prj],url_result[1]))
 		return 
 
 	logger.info("\t\t extract")

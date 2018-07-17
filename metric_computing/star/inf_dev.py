@@ -25,16 +25,28 @@ def readPrjLists():
 
 
 def update_separate_metric():
-	print "update_separate_metric"
+	# 首先遍历更新每个项目 每个指标的最新数值
+	for repo in REPOS:
+		result = dbop.select_one("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(REPO_ID[repo],))
+		if result is None:
+			logger.info("no lastest html info for repo:%s"%REPO_ID[repo])
+			continue
+		dbop.execute("update inf_dev set watch=%s,star=%s,form=%s where repo_id=%s", 
+						(result[0],result[1],result[2],REPO_ID[repo]))
+		logger.info("update html info for repo:%s"%REPO_ID[repo])
 
 def compute_nor_metric():
-	print "compute_nor_metric"
+	print "update_separate_metric"
+	
 
 def computeINF_DEV():
 	# 先更新各个指标的最新数值
+	logger.info("\t\t update separate metrics")
 	update_separate_metric()
 
+
 	# 再计算归一化的数值
+	logger.info("\t\t update nor metrics")
 	compute_nor_metric()
 
 def main():
@@ -53,5 +65,14 @@ def main():
 			logger.info("\tnot enough interval, sleep a while")
 			time.sleep(INTERVAL_TIME - work_time)
 
+def init():
+	logger.info("init ...")
+	dbop.createINF_DEV()
+	for repo in REPOS:
+		if dbop.select_one("select * inf_dev where repo_id=%s",(REPO_ID[repo],)) is None:
+			dbop.execute("insert into inf_dev(repo_id) values(%s)", 
+						(REPO_ID[repo],))
+
 if __name__ == '__main__':
+	init()
 	main()

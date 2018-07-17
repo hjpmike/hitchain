@@ -58,3 +58,18 @@ def select_all(sql_stat,params=None):
 #########################################
 #### funcs created for inf_dev.py
 #########################################
+
+def createINF_DEV():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `inf_dev`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`star` int(11) DEFAULT NULL,
+		`fork` int(11) DEFAULT NULL,
+		`watch` int(11) DEFAULT NULL,
+		`nor_inf` double DEFAULT NULL,
+		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)

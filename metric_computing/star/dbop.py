@@ -1,0 +1,60 @@
+#coding:utf-8
+
+from config import config
+import MySQLdb
+import Queue
+
+#########################################
+### 一些可以执行简单sql语句的函数
+#########################################
+THREAD_POOL = Queue.Queue()
+for i in range(0,config["db_conn_pool_size"]):
+	conn =  MySQLdb.connect(config["db_host"],config["db_user"], 
+							config["db_passwd"],config["db_name"],charset='utf8mb4')
+	THREAD_POOL.put(conn)
+def get_conn():
+	conn = THREAD_POOL.get()
+	try:
+		conn.ping()
+	except Exception,e:
+		conn = MySQLdb.connect(config["db_host"],config["db_user"], 
+							config["db_passwd"],config["db_name"],charset='utf8mb4')
+		THREAD_POOL.put(conn)
+	return conn
+def put_conn(conn):
+	THREAD_POOL.put(conn)	
+
+def execute(sql_stat,params=None):
+	conn = get_conn()
+	cursor = conn.cursor()
+	cursor.execute(sql_stat,params)
+	conn.commit()
+	cursor.close()
+	put_conn(conn)
+
+def select_one(sql_stat, params,none_return_value=None):
+	conn = get_conn()
+	cursor = conn.cursor()
+	cursor.execute(sql_stat,params)
+	result = cursor.fetchone()
+	conn.commit()
+	cursor.close()
+	put_conn(conn)
+	if result is None:
+		return none_return_value
+	else:
+		return result
+
+def select_all(sql_stat,params=None):
+	conn = get_conn()
+	cursor = conn.cursor()
+	cursor.execute(sql_stat,params)
+	result = cursor.fetchall()
+	conn.commit()
+	cursor.close()
+	put_conn(conn)
+	return result
+
+#########################################
+#### funcs created for inf_dev.py
+#########################################

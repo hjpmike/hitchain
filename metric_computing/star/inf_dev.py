@@ -36,8 +36,35 @@ def update_separate_metric():
 						(result[0],result[1],result[2],REPO_ID[repo]))
 		logger.info("\t\t   update html info for repo:%s"%REPO_ID[repo])
 
+def _nor_data(dataSet):
+	min_edge = min(dataSet)
+	max_edge = max(dataSet)
+	dur_edge = max_edge - min_edge
+	
+	# 如果数组内的元素都相同，直接返回一组0
+	if dur_edge == 0:
+		return[0]*len(dataSet)
+
+	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
+
 def compute_nor_metric():
-	print "update_separate_metric"
+	result = dbop.select_all("select id, watch,star,fork from inf_dev")
+	# ids, watches, stars, forks
+	datas = [list(),list(),list(),list()]
+	for r_row in result:
+		for j in range(0,len(datas)):
+			datas[j].append(r_row[j])
+	
+	nor_data = []
+	ids = datas[0]
+	for data in datas[1:]:
+		nor_data.append(_nor_data(data))
+	
+	for i in range(0,len(ids)):
+		dbop.execute("update inf_dev set nor_inf =%s where id=%s",
+					(sum([nor_data[j][i] for j in range(0,len(nor_data))]), ids[i]))
+
+
 	
 
 def computeINF_DEV():

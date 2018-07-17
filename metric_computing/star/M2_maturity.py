@@ -14,17 +14,14 @@ logger = logging.getLogger()
 logger.addHandler(log_file_handler)
 logger.setLevel(logging.INFO)
 
-REPOS, REPO_ID = [], {}
+REPOS = []
 INTERVAL_TIME = config['metric_compute_interval']
 	
 def readPrjLists():
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls = [item.strip() for item in prj_line.split("\t")]
-			REPOS.append(prjls[1])
-			REPO_ID[prjls[1]] = int(prjls[0])
-
-
+			REPOS.append(int(prjls[0]))
 
 def _continuous_dev_month(data):
 	month_rec = set()
@@ -54,22 +51,22 @@ def computeMaturity():
 	metrics = [issue_done, commit_total, age_dev, stars,watchs,forks]
 
 	# 获取每个指标
-	for repo in REPOS:
+	for repo_id in REPOS:
 
 		# issue_done
-		result = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and closed_at is not NULL",(REPO_ID[repo],))
+		result = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and closed_at is not NULL",(repo_id,))
 		issue_done.append(result[0])
 
 		# commit_total
-		result = dbop.select_one("select count(*) from commits_info where repo_id=%s",(REPO_ID[repo],))
+		result = dbop.select_one("select count(*) from commits_info where repo_id=%s",(repo_id,))
 		commit_total.append(result[0])
 
 		# age_dev
-		result = dbop.select_all("select author_date from commits_info where repo_id =%s",(REPO_ID[repo],))
+		result = dbop.select_all("select author_date from commits_info where repo_id =%s",(repo_id,))
 		age_dev.append(_continuous_dev_month(result))
 
 		# fans_dev
-		result = dbop.select_all("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(REPO_ID[repo],))
+		result = dbop.select_all("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(repo_id,))
 		for row in result:
 			stars.append(row[0])
 			watchs.append(row[1])
@@ -83,7 +80,7 @@ def computeMaturity():
 	for i in range(0,len(REPOS)):
 		tmp_row = [nor_metric[i] for nor_metric in nor_data]
 		dbop.execute("insert into maturity(repo_id, issue_done, commit_total, age_dev, fans_dev) values(%s,%s,%s,%s,%s)",
-						(REPO_ID[REPOS[i]],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:])))
+						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:])))
 		
 
 def main():

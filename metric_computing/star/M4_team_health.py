@@ -40,18 +40,53 @@ def _strtime_before_days(base_time, before_days):
 	before_time = time.strftime('%Y-%m-%d 23:59:59',time.localtime(before_time))
 	return before_time
 
-
+def _common_num(dataset1, dataset2):
+	data_common = 0
+	for item in dataset1:
+		if item in dataset2:
+			data_common += 1
+	return data_common
 def computeTeamHealth():
 
-	
+	# 几个重要时间点
+	time_now = time.time()
+	time_now_str = _strtime_before_days(time_now,0)
+	time_before_1_window = _strtime_before_days(time_now, EXAMINE_WINDOW)
+	time_before_2_window = _strtime_before_days(time_now, 2*EXAMINE_WINDOW)
+	time_before_3_window = _strtime_before_days(time_now, 3*EXAMINE_WINDOW)
+
+	ccrs, ngrs = [], []
+	metrics = [ccrs]
 	for repo in REPOS:
-		
+		# 几个重要集合
+		data_before_1_window = [item[0] for item in 
+									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+												(repo,time_before_1_window,time_now_str)) ] 
+		data_before_2_window = [item[0] for item in  
+									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+												(repo,time_before_2_window,time_before_1_window))]
+		data_before_3_window = [item[0] for item in  
+									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+												(repo,time_before_3_window,time_before_2_window))]
+
 		# ccr
-		time_now = time.time()
-		time_before_1_window = _time_before_days(time_now, EXAMINE_WINDOW)
-		time_before_2_window = _time_before_days(time_now, 2*EXAMINE_WINDOW)
-		dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
-							())
+		data_common = _common_num(data_before_1_window, data_before_2_window)
+		ccrs.append(data_common*1.0 / (len(data_before_2_window)+1)) #避免分母为0
+
+		# ngr
+		new_users_1 = len(data_before_1_window) - data_common  + 1 #避免分母为0
+		data_common_2 =  _common_num(data_before_3_window, data_before_2_window)
+		new_users_2 = len(data_before_2_window) - data_common_2 + 1 #避免分母为0
+		ngrs.append((new_users_1-new_users_2)*1.0/new_users_2)
+
+		# tbr 
+	metrics.append(_nor_data(ngrs))
+	for i in range(0,len(REPOS)):
+		tmp_row = [REPOS[i]]
+		for j in range(0,len(metrics)):
+			tmp_row.append(metrics[j][i])
+		dbop.execute("insert into team_health(repo_id, ccr,ngr) values(%s,%s,%s)",
+						tmp_row)
 
 
 

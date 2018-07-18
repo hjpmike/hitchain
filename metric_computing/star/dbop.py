@@ -103,4 +103,15 @@ def createQualitySub():
 	execute(html_info_sql)
 
 def createTeamHealth():
-	pass
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `team_health`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`ccr` double(4,3) DEFAULT NULL,
+		`ngr` double(4,3) DEFAULT NULL,
+		`tbr` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)

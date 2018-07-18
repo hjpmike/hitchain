@@ -34,11 +34,33 @@ def _nor_data(dataSet):
 
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 
+def _strtime_before_days(base_time, before_days):
+	# 返回befor_dayas天前的那一天的24点
+	before_time = base_time - before_days * 24*60*60
+	before_time = time.strftime('%Y-%m-%d 23:59:59',time.localtime(before_time))
+	return before_time
 
 def computeDevActv():
+	# 几个重要时间点
+	time_now = time.time()
+	time_now_str = _strtime_before_days(time_now,0)
+	time_before_1_window = _strtime_before_days(time_now, EXAMINE_WINDOW)
 
+	# commits_before_1_window,issues_before_1_window,rel_before_1_window
+	cbw, ibw, rbw = [],[],[]
+	metrics = [cbw, ibw, rbw]
 	for repo in REPOS:
-		print repo
+		# 几个重要集合
+		cbw.append(dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+												(repo,time_before_1_window,time_now_str))[0])
+		ibw.append(dbop.select_one("select count(*) from issues_info where repo_id=%s and (created_at>%s and created_at<%s)",
+												(repo,time_before_1_window,time_now_str))[0]) 
+		rbw.append(dbop.select_one("select count(*) from releases_info where repo_id=%s and (created_at>%s and created_at<%s)",
+												(repo,time_before_1_window,time_now_str)) [0])
+	nor_metrics = [ _nor_data(item) for item in metrics]
+	for i in range(0,len(REPOS)):
+		dbop.execute("insert into dev_actv(repo_id,dev,rel) values(%s,%s,%s)",
+						(REPOS[i], nor_metrics[0][i]+nor_metrics[1][i],nor_metrics[2][i]))
 
 
 def main():

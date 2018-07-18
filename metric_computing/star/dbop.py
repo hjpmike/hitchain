@@ -67,8 +67,8 @@ def createINF_DEV():
 		`star` int(11) DEFAULT NULL,
 		`fork` int(11) DEFAULT NULL,
 		`watch` int(11) DEFAULT NULL,
-		`nor_inf` double DEFAULT NULL,
-		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		`inf_dev` double DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''

@@ -14,27 +14,14 @@ logger = logging.getLogger()
 logger.addHandler(log_file_handler)
 logger.setLevel(logging.INFO)
 
-REPOS, REPO_ID = [], {}
+REPOS = []
 INTERVAL_TIME = config['metric_compute_interval']
-	
+EXAMINE_WINDOW = config["examine_window"]
 def readPrjLists():
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls = [item.strip() for item in prj_line.split("\t")]
-			REPOS.append(prjls[1])
-			REPO_ID[prjls[1]] = int(prjls[0])
-
-
-def update_separate_metric():
-	# 首先遍历更新每个项目 每个指标的最新数值
-	for repo in REPOS:
-		result = dbop.select_one("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(REPO_ID[repo],))
-		if result is None:
-			logger.info("no lastest html info for repo:%s"%REPO_ID[repo])
-			continue
-		dbop.execute("update inf_dev set watch=%s,star=%s,fork=%s where repo_id=%s", 
-						(result[0],result[1],result[2],REPO_ID[repo]))
-		logger.info("\t\t   update html info for repo:%s"%REPO_ID[repo])
+			REPOS.append(int(prjls[0]))
 
 def _nor_data(dataSet):
 	min_edge = min(dataSet)
@@ -47,35 +34,40 @@ def _nor_data(dataSet):
 
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 
-def compute_nor_metric():
-	result = dbop.select_all("select id, watch,star,fork from inf_dev")
-	# ids, watches, stars, forks
-	datas = [list(),list(),list(),list()]
-	for r_row in result:
-		for j in range(0,len(datas)):
-			datas[j].append(r_row[j])
-	
-	nor_data = []
-	ids = datas[0]
-	for data in datas[1:]:
-		nor_data.append(_nor_data(data))
-	
-	for i in range(0,len(ids)):
-		dbop.execute("update inf_dev set nor_inf =%s where id=%s",
-					(sum([nor_data[j][i] for j in range(0,len(nor_data))]), ids[i]))
-
-
-	
 
 def computeINF_DEV():
-	# 先更新各个指标的最新数值
-	logger.info("\t\t update separate metrics")
-	update_separate_metric()
 
+	deltas = [[],[],[]]
+	for repo in REPOS:
 
-	# 再计算归一化的数值
-	logger.info("\t\t update nor metrics")
-	compute_nor_metric()
+		# 先提取出范围指标，!! 为方便起见，就对某个repo的记录按照采集的时间取最后30个
+		result = dbop.select_all("select watch,star,fork from html_info where repo_id=%s order by id desc limit %s",
+					(repo,EXAMINE_WINDOW))
+
+		metric_now = result[0]
+		# 如果历史数据不足以一个窗口期，那就默认为0。虽然一开始部署时，前一个窗口期内计算得到的数值都会偏大，但是归一化后就可以了
+		if len(result) < EXAMINE_WINDOW:
+			metric_before = [0,0,0] 
+		else:
+			metric_before = result[-1]
+
+		# 计算指标变化量, !!还真有变少的，
+		for i in range(0,3):
+			deltas[i].append(metric_now[i] - metric_before[i])
+
+	print deltas
+
+	nor_deltas = []
+	for delta in deltas:
+		nor_deltas.append(_nor_data(delta))
+
+	for i in range(0,len(REPOS)):
+		row_delta = []
+		for j in range(0,len(nor_deltas)):
+			row_delta.append(nor_deltas[j][i])
+		row_delta.insert(0,REPOS[i])
+		row_delta.append(sum(row_delta))
+		dbop.execute("insert into inf_dev(repo_id,watch,star,fork,inf_dev) values(%s,%s,%s,%s,%s)", row_delta)
 
 def main():
 	logger.info(">>>>>inf_dev begins to work")
@@ -96,11 +88,7 @@ def init():
 	logger.info("init ...")
 	readPrjLists()
 	dbop.createINF_DEV()
-	for repo in REPOS:
-		if dbop.select_one("select * from inf_dev where repo_id=%s",(REPO_ID[repo],)) is None:
-			logger.info("  init row for repo:%s"%(REPO_ID[repo]))
-			dbop.execute("insert into inf_dev(repo_id) values(%s)", 
-						(REPO_ID[repo],))
+
 
 if __name__ == '__main__':
 	init()

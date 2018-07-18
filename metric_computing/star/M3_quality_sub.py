@@ -35,13 +35,37 @@ def _nor_data(dataSet):
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 
 
+def _time_str4int(time_str):
+	return time.mktime(time.strptime(time_str,"%Y-%m-%dT%H:%M:%SZ"))
+
 def computeQualitySub():
 
 	# 缺陷修复比例，平均修复时间
-	metrics = [[],[]]
+	repair_ratio, repair_time = [],[]
+	metrics = [repair_ratio, repair_time]
 	for repo in REPOS:
-		print repo
-	
+
+
+		# issue_total,done
+		result = dbop.select_all("select closed_at,created_at from issues_info where repo_id=%s and is_pr=0",(repo,))
+		total_num = len(result)
+		if total_num == 0:
+			tmp_repair_ratio = 0
+			tmp_repair_time = 0
+		else:
+			issue_done = [item for item in result if item[0] is not None]
+			tmp_repair_ratio = len(issue_done)*1.0 / total_num
+			tmp_repair_time = sum( [_time_str4int(item[0]) - _time_str4int(item[1]) 
+										for item in issue_done])*1.0 / len(issue_done)
+
+		repair_ratio.append(tmp_repair_ratio)
+		repair_time.append(tmp_repair_time)
+
+	repair_time = _nor_data(repair_time)
+	for i in range(0,len(REPOS)):
+		dbop.execute("insert into quality_sub(repo_id,repair_ratio,repair_time) values(%s,%s,%s)",
+					(REPOS[i],repair_ratio[i],repair_time[i]))
+
 
 def main():
 	logger.info(">>>>>QualitySub begins to work")

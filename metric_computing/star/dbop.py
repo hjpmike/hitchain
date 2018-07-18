@@ -101,3 +101,6 @@ def createQualitySub():
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
 	execute(html_info_sql)
+
+def createTeamHealth():
+	pass

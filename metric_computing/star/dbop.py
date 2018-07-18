@@ -115,3 +115,16 @@ def createTeamHealth():
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
 	execute(html_info_sql)
+
+def createDevActv():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `dev_actv`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`dev` double(4,3) DEFAULT NULL,
+		`rel` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)

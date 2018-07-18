@@ -1,5 +1,5 @@
 # coding:utf-8
-# 计算项目的主观质量
+# 计算项目的开发活跃度
 
 from config import config
 import time
@@ -8,7 +8,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 log_fmt = '%(asctime)s %(levelname)s(%(lineno)s): %(message)s'
 formatter = logging.Formatter(log_fmt)
-log_file_handler = TimedRotatingFileHandler(filename="log/quality_sub", when="D", interval=1, backupCount=7)
+log_file_handler = TimedRotatingFileHandler(filename="log/dev_activation", when="D", interval=1, backupCount=7)
 log_file_handler.setFormatter(formatter)    
 logger = logging.getLogger()
 logger.addHandler(log_file_handler)
@@ -35,36 +35,10 @@ def _nor_data(dataSet):
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 
 
-def _time_str2int(time_str):
-	return time.mktime(time.strptime(time_str,"%Y-%m-%dT%H:%M:%SZ"))
+def computeDevActv():
 
-def computeQualitySub():
-
-	# 缺陷修复比例，平均修复时间
-	repair_ratio, repair_time = [],[]
-	metrics = [repair_ratio, repair_time]
 	for repo in REPOS:
-
-
-		# issue_total,done
-		result = dbop.select_all("select closed_at,created_at from issues_info where repo_id=%s and is_pr=0",(repo,))
-		total_num = len(result)
-		if total_num == 0:
-			tmp_repair_ratio = 0
-			tmp_repair_time = 0
-		else:
-			issue_done = [item for item in result if item[0] is not None]
-			tmp_repair_ratio = len(issue_done)*1.0 / total_num
-			tmp_repair_time = sum( [_time_str2int(item[0]) - _time_str2int(item[1]) 
-										for item in issue_done])*1.0 / len(issue_done)
-
-		repair_ratio.append(tmp_repair_ratio)
-		repair_time.append(tmp_repair_time)
-
-	repair_time = _nor_data(repair_time)
-	for i in range(0,len(REPOS)):
-		dbop.execute("insert into quality_sub(repo_id,repair_ratio,repair_time) values(%s,%s,%s)",
-					(REPOS[i],repair_ratio[i],repair_time[i]))
+		print repo
 
 
 def main():
@@ -74,7 +48,7 @@ def main():
 		logger.info("\tstart another round of work")
 		start_time = time.time()
 
-		computeQualitySub()
+		computeDevActv()
 		
 		end_time = time.time()
 		work_time = end_time - start_time
@@ -85,7 +59,7 @@ def main():
 def init():
 	logger.info("init ...")
 	readPrjLists()
-	dbop.createQualitySub()
+	dbop.createDevActv()
 
 
 if __name__ == '__main__':

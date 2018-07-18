@@ -66,8 +66,9 @@ def createCommitJsonRaw():
 		`repo_id` int(11) DEFAULT NULL,
 		`page` int(11) DEFAULT NULL,
 		`raw` longtext,
-		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (`id`)
+		`fetched_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		KEY `repo_id` (`repo_id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
 		'''
 	execute(sql_stat)
@@ -80,12 +81,14 @@ def createCommitInfo():
 			`sha` varchar(40) DEFAULT NULL,
 			`author_id` int(11) DEFAULT NULL,
 			`author_name` varchar(500) DEFAULT NULL,
-			`author_date` varchar(20) DEFAULT NULL,
+			`author_date` datetime DEFAULT NULL,
 			`committer_id` int(11) DEFAULT NULL,
 			`committer_name` varchar(500) DEFAULT NULL,
-			`committer_date` varchar(20) DEFAULT NULL,
+			`committer_date` datetime DEFAULT NULL,
 			`parents` varchar(210) DEFAULT NULL,
-			PRIMARY KEY (`id`)
+			PRIMARY KEY (`id`),
+			KEY `repo_id` (`repo_id`),
+			KEY `page` (`page`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 		'''
 	execute(sql_stat)
@@ -98,8 +101,9 @@ def createReleaseJsonRaw():
 		`repo_id` int(11) DEFAULT NULL,
 		`page` int(11) DEFAULT NULL,
 		`raw` longtext,
-		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (`id`)
+		`fetched_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		KEY `repo_id` (`repo_id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
 		'''
 	execute(sql_stat)
@@ -112,11 +116,13 @@ def createReleaseInfo():
 			`r_id` int(11) DEFAULT NULL,
 			`name` varchar(500) DEFAULT NULL,
 			`tag_name` varchar(500) DEFAULT NULL,
-			`created_at` varchar(20) DEFAULT NULL,
-			`published_at` varchar(20) DEFAULT NULL,
+			`created_at` datetime DEFAULT NULL,
+			`published_at` datetime DEFAULT NULL,
 			`author_id` int(11) DEFAULT NULL,
 			`author_name` varchar(500) DEFAULT NULL,
-			PRIMARY KEY (`id`)
+			PRIMARY KEY (`id`),
+			KEY `repo_id` (`repo_id`),
+			KEY `page` (`page`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 		'''
 	execute(sql_stat)
@@ -128,8 +134,9 @@ def createIssueJsonRaw():
 		`repo_id` int(11) DEFAULT NULL,
 		`page` int(11) DEFAULT NULL,
 		`raw` longtext,
-		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (`id`)
+		`fetched_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		KEY `repo_id` (`repo_id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
 		'''
 	execute(sql_stat)
@@ -141,11 +148,13 @@ def createIssueInfo():
 			`page` int(11) DEFAULT NULL,
 			`number` int(11) DEFAULT NULL,
 			`is_pr` tinyint(1) DEFAULT NULL,
-			`created_at` varchar(20) DEFAULT NULL,
-			`closed_at` varchar(20) DEFAULT NULL,
+			`created_at` datetime DEFAULT NULL,
+			`closed_at` datetime DEFAULT NULL,
 			`user_id` int(11) DEFAULT NULL,
 			`user_name` varchar(500) DEFAULT NULL,
-			PRIMARY KEY (`id`)
+			PRIMARY KEY (`id`),
+			KEY `repo_id` (`repo_id`),
+			KEY `page` (`page`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 		'''
 	execute(sql_stat)
@@ -157,7 +166,7 @@ def createJsonError():
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`url` varchar(250) DEFAULT NULL,
 		`error` varchar(500) DEFAULT NULL,
-		`error_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		`error_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 		'''
@@ -173,7 +182,7 @@ def createHtmlError():
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
 		`error_msg` text,
-		`error_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		`error_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=latin1
 	'''
@@ -191,8 +200,9 @@ def createHtmlInfo():
 		`branches` int(11) DEFAULT NULL,
 		`releases` int(11) DEFAULT NULL,
 		`contributors` int(11) DEFAULT NULL,
-		`fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (`id`)
+		`fetched_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		KEY `repo_id` (`repo_id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
 	execute(html_info_sql)

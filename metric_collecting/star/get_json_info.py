@@ -31,6 +31,11 @@ PRJS_DONE = Queue.Queue() #多线程干完活后放到这个里面
 DEFAULT_THD_NUM = 3 # 默认线程个数
 URL_TEMPLATE = "https://api.github.com/repos/%s/%s?page=%d&per_page=100&state=all&direction=asc"
 
+def _clean_datetime(dateTime):
+	if dateTime is None:
+		return None
+	return dateTime.replace("T"," ")[0:-1]
+
 def _get_url(url,retry_times=3):
 	# token池
 	send_headers = {"Content-Type":"application/json","Authorization":"*"}
@@ -101,8 +106,8 @@ def _fetchIssueJson4Prj(prj):
 					is_pr = 1
 				dbop.execute("insert into issues_info" + 
 						"(repo_id,number,page,is_pr,created_at,closed_at,user_id,user_name) values (%s,%s,%s,%s,%s,%s,%s,%s)", 
-					( REPO_ID[prj],n_data["number"],last_page,is_pr,n_data["created_at"],
-									n_data["closed_at"],n_data["user"]["id"],n_data["user"]["login"]
+					( REPO_ID[prj],n_data["number"],last_page,is_pr, _clean_datetime(n_data["created_at"]),
+									_clean_datetime(n_data["closed_at"]),n_data["user"]["id"],n_data["user"]["login"]
 					))
 			
 		
@@ -151,8 +156,8 @@ def _fetchReleaseJson4Prj(prj):
 				dbop.execute("insert into releases_info(" + 
 								"repo_id,r_id,page,tag_name,name,created_at,published_at,author_id,author_name)" + 
 								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
-								( REPO_ID[prj],n_data["id"],last_page,n_data["tag_name"],n_data["name"],n_data["created_at"],
-								n_data["published_at"],n_data["author"]["id"],n_data["author"]["login"]))
+								( REPO_ID[prj],n_data["id"],last_page,n_data["tag_name"],n_data["name"],_clean_datetime(n_data["created_at"]),
+								_clean_datetime(n_data["published_at"]),n_data["author"]["id"],n_data["author"]["login"]))
 			
 		# 以后的last_data_set 应该为空
 		last_data_set = []
@@ -213,8 +218,8 @@ def _fetchCommitJson4prj(prj):
 								"repo_id,page,sha,author_id,author_name,author_date,committer_id,committer_name,committer_date,parents)" + 
 								" values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
 								( REPO_ID[prj],last_page,n_data["sha"],
-								author_id,author_name,n_data["commit"]["author"]["date"],
-								commit_id,commiter_name,n_data["commit"]["committer"]["date"],parents_sha))
+								author_id,author_name,_clean_datetime(n_data["commit"]["author"]["date"]),
+								commit_id,commiter_name,_clean_datetime(n_data["commit"]["committer"]["date"]),parents_sha))
 			
 		# 以后的last_data_set 应该为空
 		last_data_set = []

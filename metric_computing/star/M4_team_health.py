@@ -34,12 +34,24 @@ def _nor_data(dataSet):
 
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 
+def _strtime_before_days(base_time, before_days):
+	# 返回befor_dayas天前的那一天的24点
+	before_time = base_time - before_days * 24*60*60
+	before_time = time.strftime('%Y-%m-%d 23:59:59',time.localtime(before_time))
+	return before_time
+
 
 def computeTeamHealth():
 
 	
 	for repo in REPOS:
-		print repo
+		
+		# ccr
+		time_now = time.time()
+		time_before_1_window = _time_before_days(time_now, EXAMINE_WINDOW)
+		time_before_2_window = _time_before_days(time_now, 2*EXAMINE_WINDOW)
+		dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+							())
 
 
 

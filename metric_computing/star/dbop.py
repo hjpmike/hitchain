@@ -76,7 +76,7 @@ def createINF_DEV():
 
 def createMaturity():
 	html_info_sql = '''
-	CREATE TABLE IF NOT EXISTS `maturity`  (
+	CREATE TABLE IF NOT EXISTS `maturity_dev`  (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
 		`issue_done` double(4,3) DEFAULT NULL,

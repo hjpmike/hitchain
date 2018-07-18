@@ -79,7 +79,7 @@ def computeMaturity():
 
 	for i in range(0,len(REPOS)):
 		tmp_row = [nor_metric[i] for nor_metric in nor_data]
-		dbop.execute("insert into maturity(repo_id, issue_done, commit_total, age_dev, fans_dev) values(%s,%s,%s,%s,%s)",
+		dbop.execute("insert into maturity_dev(repo_id, issue_done, commit_total, age_dev, fans_dev) values(%s,%s,%s,%s,%s)",
 						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:])))
 		
 

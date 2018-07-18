@@ -134,8 +134,9 @@ def createDevTrend():
 	CREATE TABLE IF NOT EXISTS `dev_trend`  (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
-		`dev` double(4,3) DEFAULT NULL,
-		`rel` double(4,3) DEFAULT NULL,
+		`dit` double(10,3) DEFAULT NULL,
+		`tit` double(10,3) DEFAULT NULL,
+		`dcpt` double(10,3) DEFAULT NULL,
 		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1

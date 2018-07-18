@@ -45,9 +45,48 @@ def computeDevTrend():
 	time_now = time.time()
 	time_now_str = _strtime_before_days(time_now,0)
 	time_before_1_window = _strtime_before_days(time_now, EXAMINE_WINDOW)
-
+	time_before_2_window = _strtime_before_days(time_now, 2*EXAMINE_WINDOW)
+	time_before_3_window = _strtime_before_days(time_now, 3*EXAMINE_WINDOW)
+	
+	dits,tits,dcpts = [],[],[]
 	for repo in REPOS:
-		print repo
+
+		# dit
+		commits_before_1_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+												(repo,time_before_1_window,time_now_str))[0] 
+		commits_before_2_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+												(repo,time_before_2_window,time_before_1_window))[0]
+		commits_before_3_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+												(repo,time_before_3_window,time_before_2_window))[0]
+		dits.append( ((commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) + 1.0) /
+						((commits_before_2_window - commits_before_3_window) + 1.0))
+
+		# tit
+		issues_before_1_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+												(repo,time_before_1_window,time_now_str))[0] 
+		issues_before_2_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+												(repo,time_before_2_window,time_before_1_window))[0]
+		issues_before_3_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+												(repo,time_before_3_window,time_before_2_window))[0]
+		tits.append( ((issues_before_1_window - 2*issues_before_2_window + issues_before_3_window) + 1.0) /
+						((issues_before_2_window - issues_before_3_window) + 1.0))
+
+
+		# dcpt
+		fans_before_1_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+												(repo,time_now_str),(0,0,0)))
+		fans_before_2_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+												(repo,time_before_1_window),(0,0,0)))
+		fans_before_3_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+												(repo,time_before_2_window),(0,0,0)))
+		dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+						(fans_before_2_window - fans_before_3_window + 1.0))
+
+	
+	for i in range(0,len(REPOS)):
+		dbop.execute("insert into dev_trend(repo_id,dit,tit,dcpt) values(%s,%s,%s,%s)",
+						(REPOS[i],dits[i],tits[i],dcpts[i]))
+		
 
 	
 

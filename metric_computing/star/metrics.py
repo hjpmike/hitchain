@@ -1,6 +1,7 @@
 # coding:utf-8
 # 计算排名指标
 
+import numpy as np
 from config import config
 import time
 import dbop
@@ -65,7 +66,18 @@ def _common_num(dataset1, dataset2):
 			data_common += 1
 	return data_common
 
-# 转为 computeTrent函数服务
+def _gini(array):
+	array = np.array([item+0.0 for item in array]) # changes a list to np array
+	array = array.flatten() #all values are treated equally, arrays must be 1d
+	if np.amin(array) < 0:
+		array -= np.amin(array) #values cannot be negative
+	array += 0.0000001 #values cannot be 0
+	array = np.sort(array) #values must be sorted
+	index = np.arange(1,array.shape[0]+1) #index per array element
+	n = array.shape[0]#number of array elements
+	return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array))) #Gini coefficient
+
+# 专为 computeTrent函数服务
 def _socialfans_till_time(repo, dateTime):
 	fans_fb_before_1_window = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
 												(repo,dateTime),(0,))
@@ -202,19 +214,19 @@ def computeTeamHealth():
 	time_before_2_window = _strtime_before_days(time_now, 2*EXAMINE_WINDOW)
 	time_before_3_window = _strtime_before_days(time_now, 3*EXAMINE_WINDOW)
 
-	ccrs, ngrs = [], []
+	ccrs, ngrs, tbrs = [], [], []
 	metrics = [ccrs]
 	for repo in REPOS:
 		# 几个重要集合
-		data_before_1_window = [item[0] for item in 
-									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
-												(repo,time_before_1_window,time_now_str)) ] 
-		data_before_2_window = [item[0] for item in  
-									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
-												(repo,time_before_2_window,time_before_1_window))]
-		data_before_3_window = [item[0] for item in  
-									dbop.select_all("select author_id from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
-												(repo,time_before_3_window,time_before_2_window))]
+		data_before_1_window = set([item[0] for item in 
+									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+												(repo,time_before_1_window,time_now_str)) ] )
+		data_before_2_window = set([item[0] for item in  
+									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+												(repo,time_before_2_window,time_before_1_window))])
+		data_before_3_window = set([item[0] for item in  
+									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+												(repo,time_before_3_window,time_before_2_window))])
 
 		# ccr
 		data_common = _common_num(data_before_1_window, data_before_2_window)
@@ -226,13 +238,21 @@ def computeTeamHealth():
 		new_users_2 = len(data_before_2_window) - data_common_2 + 1 #避免分母为0
 		ngrs.append((new_users_1-new_users_2)*1.0/new_users_2)
 
-		# tbr 
+		# tbr 上一个窗口期的
+		commits_dis = dbop.select_all("select count(*) from commits_info where repo_id=%s and author_id is not null group by author_id", (repo,))
+		issues_dis = dbop.select_all("select count(*) from issues_info where repo_id=%s and user_id is not null group by user_id", (repo,))
+		tbrs.append(1.0/(_gini([item[0] for item in commits_dis]) + 
+							_gini([item[0] for item in issues_dis])))
+
+
+
 	metrics.append(_nor_data(ngrs))
+	metrics.append(_nor_data(tbrs))
 	for i in range(0,len(REPOS)):
 		tmp_row = [REPOS[i]]
 		for j in range(0,len(metrics)):
 			tmp_row.append(metrics[j][i])
-		dbop.execute("insert into team_health(repo_id, ccr,ngr) values(%s,%s,%s)",
+		dbop.execute("insert into team_health(repo_id, ccr,ngr,tbr) values(%s,%s,%s,%s)",
 						tmp_row)
 
 def computeDevActv():
@@ -305,13 +325,10 @@ def computeTrend():
 		ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 						(fans_before_2_window - fans_before_3_window + 1.0))
 
-
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into trend(repo_id,dit,tit,dcpt,ucpt) values(%s,%s,%s,%s,%s)",
 						(REPOS[i],dits[i],tits[i],dcpts[i],ucpts[i]))
 		
-
-
 def main():
 	logger.info(">>>>>metrics begins to work")
 	while True:

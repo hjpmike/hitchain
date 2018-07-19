@@ -65,10 +65,18 @@ def _common_num(dataset1, dataset2):
 			data_common += 1
 	return data_common
 
+# 转为 computeTrent函数服务
+def _socialfans_till_time(repo, dateTime):
+	fans_fb_before_1_window = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
+												(repo,dateTime),(0,))
+	fans_tw_before_1_window = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+												(repo,dateTime),(0,))
+	return fans_fb_before_1_window[0] + fans_tw_before_1_window[0]
+
 ####################
 # 功能函数
 ####################
-def computeINF_DEV():
+def computeINF():
 	# 几个时间点
 	time_now = time.time()
 	time_now_str = _strtime_before_days(time_now,0)
@@ -249,7 +257,7 @@ def computeDevActv():
 		dbop.execute("insert into dev_actv(repo_id,dev,rel) values(%s,%s,%s)",
 						(REPOS[i], nor_metrics[0][i]+nor_metrics[1][i],nor_metrics[2][i]))
 
-def computeDevTrend():
+def computeTrend():
 	# 几个重要时间点
 	time_now = time.time()
 	time_now_str = _strtime_before_days(time_now,0)
@@ -257,7 +265,7 @@ def computeDevTrend():
 	time_before_2_window = _strtime_before_days(time_now, 2*EXAMINE_WINDOW)
 	time_before_3_window = _strtime_before_days(time_now, 3*EXAMINE_WINDOW)
 	
-	dits,tits,dcpts = [],[],[]
+	dits,tits,dcpts,ucpts = [],[],[],[]
 	for repo in REPOS:
 
 		# dit
@@ -290,9 +298,17 @@ def computeDevTrend():
 		dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 						(fans_before_2_window - fans_before_3_window + 1.0))
 
+		# UCPT
+		fans_before_1_window = _socialfans_till_time(repo,time_now_str)
+		fans_before_2_window = _socialfans_till_time(repo,time_before_1_window)
+		fans_before_3_window = _socialfans_till_time(repo,time_before_2_window)
+		ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+						(fans_before_2_window - fans_before_3_window + 1.0))
+
+
 	for i in range(0,len(REPOS)):
-		dbop.execute("insert into dev_trend(repo_id,dit,tit,dcpt) values(%s,%s,%s,%s)",
-						(REPOS[i],dits[i],tits[i],dcpts[i]))
+		dbop.execute("insert into trend(repo_id,dit,tit,dcpt,ucpt) values(%s,%s,%s,%s,%s)",
+						(REPOS[i],dits[i],tits[i],dcpts[i],ucpts[i]))
 		
 
 
@@ -303,8 +319,8 @@ def main():
 		logger.info("\tstart another round of work")
 		start_time = time.time()
 
-		logger.info("\t  compute INF_DEV")
-		computeINF_DEV()
+		logger.info("\t  compute INF")
+		computeINF()
 		logger.info("\t  compute Maturity")
 		computeMaturity()
 		logger.info("\t  compute QualitySub")
@@ -313,8 +329,8 @@ def main():
 		computeTeamHealth()
 		logger.info("\t  compute DevActv")
 		computeDevActv()
-		logger.info("\t  compute DevTrend")
-		computeDevTrend()
+		logger.info("\t  compute Trend")
+		computeTrend()
 		
 		end_time = time.time()
 		work_time = end_time - start_time
@@ -330,7 +346,7 @@ def init():
 	dbop.createQualitySub()
 	dbop.createTeamHealth()
 	dbop.createDevActv()
-	dbop.createDevTrend()
+	dbop.createTrend()
 
 if __name__ == '__main__':
 	init()

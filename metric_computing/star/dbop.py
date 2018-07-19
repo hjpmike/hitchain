@@ -128,14 +128,15 @@ def createDevActv():
 	'''
 	execute(html_info_sql)
 
-def createDevTrend():
+def createTrend():
 	html_info_sql = '''
-	CREATE TABLE IF NOT EXISTS `dev_trend`  (
+	CREATE TABLE IF NOT EXISTS `trend`  (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
 		`dit` double(10,3) DEFAULT NULL,
 		`tit` double(10,3) DEFAULT NULL,
 		`dcpt` double(10,3) DEFAULT NULL,
+		`ucpt` double(10,3) DEFAULT NULL,
 		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1

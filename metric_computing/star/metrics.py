@@ -115,8 +115,10 @@ def computeINF_DEV():
 def computeMaturity():
 	# maturity: repo_id, issue_done, commit_total, age_dev, fans_dev
 	
-	issue_done, commit_total, age_dev, stars,watchs,forks = [],[],[],[],[],[]
-	metrics = [issue_done, commit_total, age_dev, stars,watchs,forks]
+	issue_done, commit_total, age_dev = [],[],[]
+	stars,watchs,forks = [],[],[]
+	fans_fb, fans_tw = [],[]
+	metrics = [issue_done, commit_total, age_dev, stars,watchs,forks, fans_fb,fans_tw]
 
 	# 获取每个指标
 	for repo_id in REPOS:
@@ -134,11 +136,18 @@ def computeMaturity():
 		age_dev.append(_continuous_dev_month(result))
 
 		# fans_dev
-		result = dbop.select_all("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(repo_id,))
-		for row in result:
-			stars.append(row[0])
-			watchs.append(row[1])
-			forks.append(row[2])
+		result = dbop.select_one("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(repo_id,),(0,0,0))
+		stars.append(result[0])
+		watchs.append(result[1])
+		forks.append(result[2])
+
+		# fans_social
+		result = dbop.select_one("select watches_num from fb_data where coin_id=%s order by id desc limit 1",
+									(repo_id,),(0,))
+		fans_fb.append(result[0])
+		result = dbop.select_one("select followers_num from twitters_data where coin_id=%s order by id desc limit 1",
+									(repo_id,),(0,))
+		fans_tw.append(result[0])
 
 	# 归一化
 	nor_data = []
@@ -147,8 +156,8 @@ def computeMaturity():
 
 	for i in range(0,len(REPOS)):
 		tmp_row = [nor_metric[i] for nor_metric in nor_data]
-		dbop.execute("insert into maturity_dev(repo_id, issue_done, commit_total, age_dev, fans_dev) values(%s,%s,%s,%s,%s)",
-						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:])))
+		dbop.execute("insert into maturity(repo_id, issue_done, commit_total, age_dev, fans_dev, fans_social) values(%s,%s,%s,%s,%s,%s)",
+						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:-2]),sum(tmp_row[-2:])))
 
 def computeQualitySub():
 

@@ -1,0 +1,106 @@
+Wed, 18 Jul 2018 16:02:55 twitter_get.py[line:94] INFO hello
+Wed, 18 Jul 2018 16:02:55 twitter_get.py[line:33] INFO https://twitter.com/aetrnty
+Wed, 18 Jul 2018 16:03:18 twitter_get.py[line:88] INFO 33  Aeternity  1  0  781
+Wed, 18 Jul 2018 16:03:18 twitter_get.py[line:33] INFO https://twitter.com/MakerDAO
+Wed, 18 Jul 2018 16:03:45 twitter_get.py[line:88] INFO 34  Maker  362  248  11820
+Wed, 18 Jul 2018 16:03:45 twitter_get.py[line:33] INFO https://twitter.com/siatechhq
+Wed, 18 Jul 2018 16:04:07 twitter_get.py[line:88] INFO 35  Siacoin  957  1465  107028
+Wed, 18 Jul 2018 16:04:07 twitter_get.py[line:33] INFO https://twitter.com/steemit
+Wed, 18 Jul 2018 16:04:43 twitter_get.py[line:88] INFO 36  Steem  14504  12977  103415
+Wed, 18 Jul 2018 16:04:43 twitter_get.py[line:33] INFO https://twitter.com/AugurProject
+Wed, 18 Jul 2018 16:04:59 twitter_get.py[line:88] INFO 37  Augur  1889  263  116536
+Wed, 18 Jul 2018 16:04:59 twitter_get.py[line:33] INFO https://www.twitter.com/vergecurrency
+Wed, 18 Jul 2018 16:05:30 twitter_get.py[line:88] INFO 38  Verge   2396  810  305592
+Wed, 18 Jul 2018 16:05:30 twitter_get.py[line:33] INFO https://twitter.com/nano
+Wed, 18 Jul 2018 16:05:37 twitter_get.py[line:88] INFO 39  Nano  345  78  97148
+Wed, 18 Jul 2018 16:05:37 twitter_get.py[line:33] INFO https://twitter.com/Bytom_Official
+Wed, 18 Jul 2018 16:05:43 twitter_get.py[line:88] INFO 40  Bytom  803  238  18672
+Wed, 18 Jul 2018 16:05:43 twitter_get.py[line:33] INFO https://twitter.com/BitcoinDiamond_
+Wed, 18 Jul 2018 16:05:48 twitter_get.py[line:88] INFO 41  Bitcoin Diamond  609  307  19882
+Wed, 18 Jul 2018 16:05:48 twitter_get.py[line:33] INFO https://twitter.com/kucoincom
+Wed, 18 Jul 2018 16:05:51 twitter_get.py[line:88] INFO 42  KuCoin Shares  4202  113  296849
+Wed, 18 Jul 2018 16:05:51 twitter_get.py[line:33] INFO https://twitter.com/intent/tweet?text=%23waltonchain%23&url=&via=Waltonchain
+Wed, 18 Jul 2018 16:05:53 twitter_get.py[line:88] INFO 43  Waltonchain  0  0  0
+Wed, 18 Jul 2018 16:05:53 twitter_get.py[line:33] INFO https://twitter.com/PundiXLabs
+Wed, 18 Jul 2018 16:05:59 twitter_get.py[line:88] INFO 44  Pundi X  1066  156  33974
+Wed, 18 Jul 2018 16:05:59 twitter_get.py[line:33] INFO https://twitter.com/dogecoin
+Wed, 18 Jul 2018 16:06:02 twitter_get.py[line:88] INFO 45  Dogecoin  417  9  121838
+Wed, 18 Jul 2018 16:06:02 twitter_get.py[line:33] INFO https://twitter.com/wavesplatform
+Wed, 18 Jul 2018 16:06:06 twitter_get.py[line:33] INFO https://twitter.com/bitpopulous
+Wed, 18 Jul 2018 16:06:10 twitter_get.py[line:33] INFO https://stratisplatform.com/wp-content/uploads/2016/08/Social_Twitter-3.png
+Wed, 18 Jul 2018 16:06:27 twitter_get.py[line:33] INFO https://twitter.com/ethstatus
+Wed, 18 Jul 2018 16:06:30 twitter_get.py[line:88] INFO 52  Status  1266  441  105069
+Wed, 18 Jul 2018 16:06:30 twitter_get.py[line:33] INFO https://twitter.com/wanchain_org
+Wed, 18 Jul 2018 16:06:46 twitter_get.py[line:88] INFO 53  Wanchain  202  76  109397
+Wed, 18 Jul 2018 16:06:46 twitter_get.py[line:33] INFO https://twitter.com/HcashOfficial
+Wed, 18 Jul 2018 16:07:04 twitter_get.py[line:88] INFO 54  Hshare  494  55  12270
+Wed, 18 Jul 2018 16:07:04 twitter_get.py[line:33] INFO https://twitter.com/@DigixGlobal
+Wed, 18 Jul 2018 16:07:28 twitter_get.py[line:88] INFO 55  DigixDAO  472  541  15602
+Wed, 18 Jul 2018 16:07:28 twitter_get.py[line:33] INFO https://twitter.com/MithrilToken
+Wed, 18 Jul 2018 16:08:01 twitter_get.py[line:33] INFO https://twitter.com/MixinMessenger
+Wed, 18 Jul 2018 16:08:22 twitter_get.py[line:33] INFO https://twitter.com/bitcoinprivate
+Wed, 18 Jul 2018 16:08:41 twitter_get.py[line:88] INFO 59  Bitcoin Private  400  52040  105
+Wed, 18 Jul 2018 16:08:41 twitter_get.py[line:33] INFO https://twitter.com/komodoplatform
+Wed, 18 Jul 2018 16:09:10 twitter_get.py[line:88] INFO 60  Komodo  2892  87  91358
+Wed, 18 Jul 2018 16:09:10 twitter_get.py[line:33] INFO https://twitter.com/Aion_Network
+Wed, 18 Jul 2018 16:09:32 twitter_get.py[line:88] INFO 61  Aion  955  1454  52338
+Wed, 18 Jul 2018 16:09:32 twitter_get.py[line:33] INFO https://twitter.com/HUOBI_Pro
+Wed, 18 Jul 2018 16:09:53 twitter_get.py[line:33] INFO https://twitter.com/maidsafe
+Wed, 18 Jul 2018 16:10:10 twitter_get.py[line:33] INFO https://twitter.com/gongxinbao
+Wed, 18 Jul 2018 16:10:30 twitter_get.py[line:88] INFO 64  GXChain  650  316  11146
+Wed, 18 Jul 2018 16:10:30 twitter_get.py[line:33] INFO https://twitter.com/nebulasio
+Wed, 18 Jul 2018 16:10:49 twitter_get.py[line:33] INFO http://twitter.com/intent/tweet?text=Ardor&url=https%3A%2F%2Fwww.ardorplatform.org%2F%23.W0hq2KOq3rY.twitter&related=
+Wed, 18 Jul 2018 16:11:30 twitter_get.py[line:88] INFO 66  Ardor  0  0  0
+Wed, 18 Jul 2018 16:11:30 twitter_get.py[line:33] INFO https://twitter.com/loopringorg
+Wed, 18 Jul 2018 16:11:52 twitter_get.py[line:88] INFO 67  Loopring  1595  362  28174
+Wed, 18 Jul 2018 16:11:52 twitter_get.py[line:33] INFO https://twitter.com/aelfblockchain
+Wed, 18 Jul 2018 16:12:10 twitter_get.py[line:88] INFO 68  Aelf  410  101  23550
+Wed, 18 Jul 2018 16:12:10 twitter_get.py[line:33] INFO https://twitter.com/ArkEcosystem
+Wed, 18 Jul 2018 16:12:29 twitter_get.py[line:88] INFO 69  Ark  1308  2687  64461
+Wed, 18 Jul 2018 16:12:29 twitter_get.py[line:33] INFO https://monacoin.org/img/twitter.png
+Wed, 18 Jul 2018 16:12:45 twitter_get.py[line:88] INFO 70  MonaCoin  0  0  0
+Wed, 18 Jul 2018 16:12:46 twitter_get.py[line:33] INFO https://twitter.com/reddcoin
+Wed, 18 Jul 2018 16:13:03 twitter_get.py[line:88] INFO 71  ReddCoin  7698  223  72899
+Wed, 18 Jul 2018 16:13:03 twitter_get.py[line:33] INFO https://twitter.com/FunFairTech
+Wed, 18 Jul 2018 16:13:23 twitter_get.py[line:88] INFO 72  FunFair   545  320  37099
+Wed, 18 Jul 2018 16:13:23 twitter_get.py[line:33] INFO https://twitter.com/kybernetwork
+Wed, 18 Jul 2018 16:13:39 twitter_get.py[line:88] INFO 73  Kyber Network  1227  551  87471
+Wed, 18 Jul 2018 16:13:39 twitter_get.py[line:33] INFO https://twitter.com/loomnetwork
+Wed, 18 Jul 2018 16:13:58 twitter_get.py[line:88] INFO 74  Loom Network  750  67  13431
+Wed, 18 Jul 2018 16:13:58 twitter_get.py[line:33] INFO https://twitter.com/emercoin_press
+Wed, 18 Jul 2018 16:14:11 twitter_get.py[line:88] INFO 75  Emercoin  157  10  3371
+Wed, 18 Jul 2018 16:14:11 twitter_get.py[line:33] INFO https://twitter.com/dentacoin?lang=en
+Wed, 18 Jul 2018 16:14:30 twitter_get.py[line:88] INFO 76  Dentacoin  871  487  18018
+Wed, 18 Jul 2018 16:14:30 twitter_get.py[line:33] INFO https://twitter.com/MCO_Crypto
+Wed, 18 Jul 2018 16:14:42 twitter_get.py[line:88] INFO 77  MCO  470  58  65778
+Wed, 18 Jul 2018 16:14:42 twitter_get.py[line:33] INFO https://twitter.com/WAX_io
+Wed, 18 Jul 2018 16:15:00 twitter_get.py[line:88] INFO 78  WAX  1595  211  16984
+Wed, 18 Jul 2018 16:15:00 twitter_get.py[line:33] INFO https://twitter.com/CoinMarketCap
+Wed, 18 Jul 2018 16:15:12 twitter_get.py[line:88] INFO 79  Gas  1511  1904  452123
+Wed, 18 Jul 2018 16:15:12 twitter_get.py[line:33] INFO https://twitter.com/Bancor
+Wed, 18 Jul 2018 16:15:30 twitter_get.py[line:88] INFO 81  Bancor   1560  102  73197
+Wed, 18 Jul 2018 16:15:30 twitter_get.py[line:33] INFO https://twitter.com/Cryptonex_CNX
+Wed, 18 Jul 2018 16:15:42 twitter_get.py[line:88] INFO 82  Cryptonex  220  17  31120
+Wed, 18 Jul 2018 16:15:43 twitter_get.py[line:33] INFO https://twitter.com/ReggieMiddleton
+Wed, 18 Jul 2018 16:16:01 twitter_get.py[line:88] INFO 83  Veritaseum  14972  596  23197
+Wed, 18 Jul 2018 16:16:01 twitter_get.py[line:33] INFO https://twitter.com/cybermiles
+Wed, 18 Jul 2018 16:16:14 twitter_get.py[line:88] INFO 85  CyberMiles  426  139  297344
+Wed, 18 Jul 2018 16:16:14 twitter_get.py[line:33] INFO https://twitter.com/PowerLedger_io
+Wed, 18 Jul 2018 16:16:32 twitter_get.py[line:88] INFO 86  Power Ledger  3497  2967  86419
+Wed, 18 Jul 2018 16:16:32 twitter_get.py[line:33] INFO https://twitter.com/ethos_io
+Wed, 18 Jul 2018 16:16:52 twitter_get.py[line:88] INFO 87  Ethos  590  991  60962
+Wed, 18 Jul 2018 16:16:52 twitter_get.py[line:33] INFO https://twitter.com/moac_io
+Wed, 18 Jul 2018 16:17:09 twitter_get.py[line:88] INFO 88  MOAC  255  741  450
+Wed, 18 Jul 2018 16:17:09 twitter_get.py[line:33] INFO https://twitter.com/_pivx
+Wed, 18 Jul 2018 16:17:23 twitter_get.py[line:88] INFO 89  PIVX  2478  396  60270
+Wed, 18 Jul 2018 16:17:23 twitter_get.py[line:33] INFO https://twitter.com/decentraland
+Wed, 18 Jul 2018 16:17:44 twitter_get.py[line:88] INFO 90  Decentraland  573  176  37407
+Wed, 18 Jul 2018 16:17:44 twitter_get.py[line:33] INFO https://twitter.com/dropilcoin
+Wed, 18 Jul 2018 16:17:56 twitter_get.py[line:88] INFO 91  Dropil  133  86  6965
+Wed, 18 Jul 2018 16:17:56 twitter_get.py[line:33] INFO https://twitter.com/paypex
+Wed, 18 Jul 2018 16:17:22 twitter_get.py[line:83] INFO 92  Paypex  112  903  2108
+Wed, 18 Jul 2018 16:17:22 twitter_get.py[line:28] INFO https://twitter.com/quoine_SG
+Wed, 18 Jul 2018 16:17:44 twitter_get.py[line:83] INFO 93  QASH  1509  730  21719
+Wed, 18 Jul 2018 16:17:44 twitter_get.py[line:28] INFO https://twitter.com/polymathnetwork
+Wed, 18 Jul 2018 16:17:59 twitter_get.py[line:83] INFO 94  Polymath  907  167  28097
+Wed, 18 Jul 2018 16:17:59 twitter_get.py[line:28] INFO https://twitter.com/zencashofficial

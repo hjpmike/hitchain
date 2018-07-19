@@ -53,9 +53,9 @@ def _datetime2int(date_time):
 	return time.mktime(date_time.timetuple())
 
 def _strtime_before_days(base_time, before_days):
-	# 返回befor_dayas天前的那一天的24点
-	before_time = base_time - before_days * 24*60*60
-	before_time = time.strftime('%Y-%m-%d 23:59:59',time.localtime(before_time))
+	# 返回befor_dayas天前的那一天的凌晨
+	before_time = base_time - before_days* 24*60*60
+	before_time = time.strftime('%Y-%m-%d 00:00:00',time.localtime(before_time))
 	return before_time
 
 def _common_num(dataset1, dataset2):
@@ -69,30 +69,48 @@ def _common_num(dataset1, dataset2):
 # 功能函数
 ####################
 def computeINF_DEV():
-	deltas = [[],[],[]]
+	# 几个时间点
+	time_now = time.time()
+	time_now_str = _strtime_before_days(time_now,0)
+	time_before_1_window = _strtime_before_days(time_now, EXAMINE_WINDOW)
+
+	fans = [[],[],[]]
+	fans_fb,fans_tw = [],[]
 	for repo in REPOS:
-		# 先提取出范围指标，!! 为方便起见，就对某个repo的记录按照采集的时间取最后30个
-		result = dbop.select_all("select watch,star,fork from html_info where repo_id=%s order by id desc limit %s",
-					(repo,EXAMINE_WINDOW))
-		metric_now = result[0]
-		# 如果历史数据不足以一个窗口期，那就默认为0。虽然一开始部署时，前一个窗口期内计算得到的数值都会偏大，但是归一化后就可以了
-		if len(result) < EXAMINE_WINDOW:
-			metric_before = [0,0,0] 
-		else:
-			metric_before = result[-1]
+
+		# 开发社区的值
+		fans_now = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+												(repo,time_now_str),(0,0,0))
+		fans_before = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+												(repo,time_before_1_window),(0,0,0))
 		# 计算指标变化量, !!还真有变少的，
 		for i in range(0,3):
-			deltas[i].append(metric_now[i] - metric_before[i])
-	nor_deltas = []
-	for delta in deltas:
-		nor_deltas.append(_nor_data(delta))
+			fans[i].append(fans_now[i] - fans_before[i])
+
+		# 社交社区
+		fb_now = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
+							(repo,time_now_str),(0,))
+		fb_before = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
+							(repo,time_before_1_window),(0,))
+		tw_now = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+							(repo,time_now_str),(0,))
+		tw_before = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+							(repo,time_before_1_window),(0,))
+		
+		fans_fb.append(fb_now[0]-fb_before[0])
+		fans_tw.append(tw_now[0]-tw_before[0])
+		
+
+
+	# 归一化
+	fans.extend([fans_fb,fans_tw])
+	fans = [_nor_data(item) for item in fans]
 	for i in range(0,len(REPOS)):
-		row_delta = []
-		for j in range(0,len(nor_deltas)):
-			row_delta.append(nor_deltas[j][i])
-		row_delta.insert(0,REPOS[i])
-		row_delta.append(sum(row_delta))
-		dbop.execute("insert into inf_dev(repo_id,watch,star,fork,inf_dev) values(%s,%s,%s,%s,%s)", row_delta)
+		tmp_row = []
+		for j in range(0,len(fans)):
+			tmp_row.append(fans[j][i])
+		dbop.execute("insert into inf(repo_id,inf_dev,inf_social) values(%s,%s,%s)", 
+						(REPOS[i], sum(tmp_row[0:3]), sum(tmp_row[3:])))
 
 def computeMaturity():
 	# maturity: repo_id, issue_done, commit_total, age_dev, fans_dev
@@ -254,11 +272,11 @@ def computeDevTrend():
 						((issues_before_2_window - issues_before_3_window) + 1.0))
 
 		# dcpt
-		fans_before_1_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+		fans_before_1_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
 												(repo,time_now_str),(0,0,0)))
-		fans_before_2_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+		fans_before_2_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
 												(repo,time_before_1_window),(0,0,0)))
-		fans_before_3_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at limit 1",
+		fans_before_3_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
 												(repo,time_before_2_window),(0,0,0)))
 		dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 						(fans_before_2_window - fans_before_3_window + 1.0))
@@ -267,6 +285,7 @@ def computeDevTrend():
 		dbop.execute("insert into dev_trend(repo_id,dit,tit,dcpt) values(%s,%s,%s,%s)",
 						(REPOS[i],dits[i],tits[i],dcpts[i]))
 		
+
 
 def main():
 	logger.info(">>>>>metrics begins to work")
@@ -297,7 +316,7 @@ def main():
 def init():
 	logger.info("init ...")
 	readPrjLists()
-	dbop.createINF_DEV()
+	dbop.createINF()
 	dbop.createMaturity()
 	dbop.createQualitySub()
 	dbop.createTeamHealth()

@@ -198,7 +198,7 @@ def computeQualitySub():
 										for item in issue_done])*1.0 / len(issue_done)
 
 		repair_ratio.append(tmp_repair_ratio)
-		repair_time.append(tmp_repair_time)
+		repair_time.append(1.0 / tmp_repair_time)
 
 	repair_time = _nor_data(repair_time)
 	for i in range(0,len(REPOS)):
@@ -215,7 +215,6 @@ def computeTeamHealth():
 	time_before_3_window = _strtime_before_days(time_now, 3*EXAMINE_WINDOW)
 
 	ccrs, ngrs, tbrs = [], [], []
-	metrics = [ccrs]
 	for repo in REPOS:
 		# 几个重要集合
 		data_before_1_window = set([item[0] for item in 
@@ -245,7 +244,7 @@ def computeTeamHealth():
 							_gini([item[0] for item in issues_dis])))
 
 
-
+	metrics.append(_nor_data(ccrs))
 	metrics.append(_nor_data(ngrs))
 	metrics.append(_nor_data(tbrs))
 	for i in range(0,len(REPOS)):
@@ -324,7 +323,7 @@ def computeTrend():
 		fans_before_3_window = _socialfans_till_time(repo,time_before_2_window)
 		ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 						(fans_before_2_window - fans_before_3_window + 1.0))
-
+	dits,tits,dcpts,ucpts = _nor_data(dits),_nor_data(tits),_nor_data(dcpts),_nor_data(ucpts)
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into trend(repo_id,dit,tit,dcpt,ucpt) values(%s,%s,%s,%s,%s)",
 						(REPOS[i],dits[i],tits[i],dcpts[i],ucpts[i]))

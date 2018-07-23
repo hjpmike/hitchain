@@ -283,8 +283,9 @@ def readPrjLists():
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls = [item.strip() for item in prj_line.split("\t")]
-			PRJS.put(prjls[1])
-			REPO_ID[prjls[1]] = int(prjls[0])
+			repo_name = prjls[1][19:]
+			prjs.append(repo_name)
+			REPO_ID[repo_name] = int(prjls[0])
 
 def main():
 	global PRJS

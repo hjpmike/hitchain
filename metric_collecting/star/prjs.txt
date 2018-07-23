@@ -22,7 +22,7 @@
 27	https://github.com/Zilliqa/Zilliqa
 28	https://github.com/BTCGPU/BTCGPU
 29	https://github.com/0xProject/0x-monorepo
-30	https://github.com/ecred/dcrd
+30	https://github.com/decred/dcrd
 31	https://github.com/bitshares/bitshares-core
 32	https://github.com/digibyte/digibyte
 33	https://github.com/aeternity/elixir-node 

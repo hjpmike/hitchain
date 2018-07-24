@@ -420,17 +420,17 @@ def computeScore():
 	dateTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
 	for repo in REPOS:
 		M1[repo] = _my_sum(dbop.select_one("select inf_dev,inf_social from inf where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		M2[repo] = _my_sum(dbop.select_one("select issue_done, commit_total, age_dev, fans_dev, fans_social from maturity where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		M3[repo] = _my_sum(dbop.select_one("select repair_ratio,repair_time from quality_sub where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		M4[repo] = _my_sum(dbop.select_one("selecg  ccr,ngr,tbr from team_health where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		M5[repo] = _my_sum(dbop.select_one("select  ,dev,rel from dev_actv where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		M6[repo] = _my_sum(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
-						(prj,dateTime),(0,0)))
+						(repo,dateTime),(0,0)))
 		score.append((repo,_my_avg([M1,M2,M3,M4,M5,M6])))
 	score = sorted(score, key=lambda x: x[1])
 	M1,M2,M3,M4,M5,M6 = _nor_data(M1),_nor_data(M2),_nor_data(M3),_nor_data(M4),_nor_data(M5),_nor_data(M6)

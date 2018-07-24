@@ -45,6 +45,13 @@ def _my_sum(data):
 		return None
 	return sum(data_del_none)
 
+def _my_avg(data):
+	# 更能够处理包含none的数组
+	data_del_none = [item for item in data if item is not None]
+	if len(data_del_none) == 0:
+		return None
+	return sum(data_del_none)/len(data_del_none)
+
 def _nor_data(dataSet):
 	dataSetValid = [item for item in dataSet if item is not None]
 	min_edge = min(dataSetValid)
@@ -162,7 +169,7 @@ def computeINF():
 		for j in range(0,len(fans)):
 			tmp_row.append(fans[j][i])
 		dbop.execute("insert into inf(repo_id,inf_dev,inf_social) values(%s,%s,%s)", 
-						(REPOS[i], _my_sum(tmp_row[0:3]), _my_sum(tmp_row[3:])))
+						(REPOS[i], _my_avg(tmp_row[0:3]), _my_avg(tmp_row[3:])))
 
 def computeMaturity():
 	# maturity: repo_id, issue_done, commit_total, age_dev, fans_dev
@@ -223,7 +230,7 @@ def computeMaturity():
 	for i in range(0,len(REPOS)):
 		tmp_row = [nor_metric[i] for nor_metric in nor_data]
 		dbop.execute("insert into maturity(repo_id, issue_done, commit_total, age_dev, fans_dev, fans_social) values(%s,%s,%s,%s,%s,%s)",
-						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],_my_sum(tmp_row[3:-2]),_my_sum(tmp_row[-2:])))
+						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],_my_avg(tmp_row[3:-2]),_my_avg(tmp_row[-2:])))
 
 def computeQualitySub():
 
@@ -244,7 +251,7 @@ def computeQualitySub():
 			else:
 				issue_done = [item for item in result if item[0] is not None]
 				tmp_repair_ratio = len(issue_done)*1.0 / total_num
-				tmp_repair_time = _my_sum( [_datetime2int(item[0]) - _datetime2int(item[1]) 
+				tmp_repair_time = sum( [_datetime2int(item[0]) - _datetime2int(item[1]) 
 											for item in issue_done])*1.0 / len(issue_done)
 			repair_ratio.append(tmp_repair_ratio)
 			repair_time.append(1.0 / (tmp_repair_time+1))
@@ -330,7 +337,7 @@ def computeDevActv():
 	nor_metrics = [ _nor_data(item) for item in metrics]
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into dev_actv(repo_id,dev,rel) values(%s,%s,%s)",
-						(REPOS[i], nor_metrics[0][i]+nor_metrics[1][i],nor_metrics[2][i]))
+						(REPOS[i], _my_avg(nor_metrics[0][i]+nor_metrics[1][i]),nor_metrics[2][i]))
 
 def computeTrend():
 	# 几个重要时间点
@@ -408,7 +415,7 @@ def computeScore():
 						(prj,dateTime),(0,0)))
 		M6[repo] = _my_sum(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
 						(prj,dateTime),(0,0)))
-		score.append((repo,_my_sum([M1,M2,M3,M4,M5,M6])))
+		score.append((repo,_my_avg([M1,M2,M3,M4,M5,M6])))
 	score = sorted(score, key=lambda x: x[1])
 	M1,M2,M3,M4,M5,M6 = _nor_data(M1),_nor_data(M2),_nor_data(M3),_nor_data(M4),_nor_data(M5),_nor_data(M6)
 

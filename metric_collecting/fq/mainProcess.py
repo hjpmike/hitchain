@@ -2,12 +2,18 @@
 
 import ConfigParser
 import git
+import shutil
+
 import helper
 import pymysql
 import csv
-import clone
+# import clone
 import pull
 import os
+import sonarScan
+import sonarResultAnalysis
+
+
 
 # 代码clone
 # git.Git("pythonClone/").clone("https://github.com/alecive/FlatWoken.git")
@@ -28,21 +34,35 @@ conn = pymysql.connect(host=cf.get("DB","host"),
                        charset='utf8')
 
 # 拉代码
-clone.CloneProcess()
-pull.PullProcess()
+# clone.CloneProcess()
 
-
-
+def addSonarResult(issueNum,projId,repoName):
+    with conn.cursor() as cur:
+        sql = "insert into sonar_repo_issues_num (`proj_id`, `issue_num`, `repo_name`) values (%s,%s,'%s')" % (projId,issueNum,repoName)
+        cur.execute(sql)
+        conn.commit()
 
 
 if __name__ == "__main__":
-    repoListFile = cf.get("server", "repoList")
-    with open(repoListFile,"r") as f:
-        reader = csv.reader(f,delimiter = ",")
-        for item in reader:
-            proName,repoName,gitAddr = item
-            sourcePath = cf.get("server","gitCloneAddr")+repoName
-            targetPath = cf.get("server","sonarTempAddr")+repoName
-            helper.mkdir(targetPath)
-            helper.copyFiles(sourcePath,targetPath)
+    pull.PullProcess()
+    sourcePathBase = os.getcwd() + "\\" + cf.get("server", "gitCloneAddr")
+    targetPathBase = os.getcwd() + "\\" + cf.get("server","sonarTempAddr")
+    for repo in pull.getCloneRepos():
+        proName,repoName,gitAddr,projId = repo
+        sourcePath = sourcePathBase + "\\" + repoName
+        targetPath = targetPathBase + "\\" + repoName
+        helper.mkdir(targetPath)
+        helper.copyFiles(sourcePath,targetPath)
+
+        sonarScan.runSonarScanner(targetPath)
+
+        os.system('rmdir /S /Q "{}"'.format(targetPath))
+        addSonarResult(sonarResultAnalysis.getIssueNumberOfRepo(repoName),projId,repoName)
+
+
+
+
+
+
+
 

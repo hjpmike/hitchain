@@ -432,7 +432,7 @@ def computeScore():
 		M6.append(_my_avg(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
 						(repo,dateTime),(0,0))))
 		score.append((repo,_my_avg([M1[-1],M2[-1],M3[-1],M4[-1],M5[-1],M6[-1]])))
-	score = sorted(score, key=lambda x: x[1])
+	score = sorted(score, key=lambda x: x[1],reverse=True)
 
 	field_sql_str = "prj_id,rank,score,m1_inf,m2_maturity,m3_quality,m4_team_healty,m5_activatin,m6_trend"
 	for i in range(0,len(score)):

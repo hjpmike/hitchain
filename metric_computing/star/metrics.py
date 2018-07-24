@@ -337,7 +337,7 @@ def computeDevActv():
 	nor_metrics = [ _nor_data(item) for item in metrics]
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into dev_actv(repo_id,dev,rel) values(%s,%s,%s)",
-						(REPOS[i], _my_avg(nor_metrics[0][i]+nor_metrics[1][i]),nor_metrics[2][i]))
+						(REPOS[i], _my_avg(nor_metrics[0][i],nor_metrics[1][i]),nor_metrics[2][i]))
 
 def computeTrend():
 	# 几个重要时间点

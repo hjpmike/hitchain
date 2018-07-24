@@ -1,5 +1,4 @@
 import pymysql
-import ConfigParser
 
 conn = pymysql.connect(host="47.254.66.180",
                        port=3306,
@@ -19,6 +18,16 @@ def handleResult(githubRepo,projId):
         curRepo.execute(sql)
         conn.commit()
 
+def handleRepoName(githubRepoName,projId):
+    with conn.cursor() as curRepo:
+        sql = "update git_clone_pull_status set repo_name = '%s' where proj_id = %s" % (githubRepoName,projId)
+        curRepo.execute(sql)
+        conn.commit()
+
+
 for prj in curPrj.fetchall():
     projId, githubUrl = prj
-    handleResult(githubUrl+".git",projId)
+    # handleResult(githubUrl+".git",projId)
+
+    gitStr = githubUrl.split("/")
+    handleRepoName(gitStr[-1],projId)

@@ -463,6 +463,8 @@ def main():
 		computeDevActv()
 		logger.info("\t  compute Trend")
 		computeTrend()
+		logger.info("\t  compute score")
+		computeScore()
 		
 		end_time = time.time()
 		work_time = end_time - start_time

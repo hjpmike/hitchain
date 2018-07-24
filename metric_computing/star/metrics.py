@@ -40,7 +40,10 @@ def readPrjLists():
 
 def _my_sum(data):
 	# 更能够处理包含none的数组
-	return sum([item for item in data if item is not None])
+	data_del_none = [item for item in data if item is not None]
+	if len(data_del_none) == 0:
+		return None
+	return sum(data_del_none)
 
 def _nor_data(dataSet):
 	dataSetValid = [item for item in dataSet if item is not None]

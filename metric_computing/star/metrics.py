@@ -245,7 +245,7 @@ def computeQualitySub():
 				tmp_repair_time = _my_sum( [_datetime2int(item[0]) - _datetime2int(item[1]) 
 											for item in issue_done])*1.0 / len(issue_done)
 			repair_ratio.append(tmp_repair_ratio)
-			repair_time.append(1.0 / tmp_repair_time)
+			repair_time.append(1.0 / (tmp_repair_time+1))
 
 	repair_time = _nor_data(repair_time)
 	for i in range(0,len(REPOS)):

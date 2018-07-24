@@ -21,15 +21,22 @@ logger.setLevel(logging.INFO)
 REPOS = []
 INTERVAL_TIME = config['metric_compute_interval']
 EXAMINE_WINDOW = config["examine_window"]
+# 用户判断缺失值的，比如某个项目在某个社区没有数据
+NONE_GH, NONE_FB, NONE_TW = set(),set(),set()
 
 ####################
 # 工具函数
 ####################
 def readPrjLists():
-	with open("prjs.txt","r") as fp:
-		for prj_line in fp.readlines():
-			prjls = [item.strip() for item in prj_line.split("\t")]
-			REPOS.append(int(prjls[0]))
+	prjs = dbop.select_all("select prj_id,github_url,facebook_url,twitter_url from prj_list")
+	for prj in prjs:
+		REPOS.append(prj[0])
+		if prj[1] is None:
+			NONE_GH.add(prj[0])
+		if prj[2] is None or len(prj[2].strip())==0:
+			NONE_FB.add(prj[0])
+		if prj[3] is None or len(prj[3].strip())==0:
+			NONE_TW.add(prj[0])
 
 def _nor_data(dataSet):
 	min_edge = min(dataSet)

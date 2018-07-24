@@ -12,7 +12,7 @@ import pull
 import os
 import sonarScan
 import sonarResultAnalysis
-
+import datetime
 
 
 # 代码clone
@@ -38,26 +38,29 @@ conn = pymysql.connect(host=cf.get("DB","host"),
 
 def addSonarResult(issueNum,projId,repoName):
     with conn.cursor() as cur:
-        sql = "insert into sonar_repo_issues_num (`proj_id`, `issue_num`, `repo_name`) values (%s,%s,'%s')" % (projId,issueNum,repoName)
+        dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sql = "insert into sonar_repo_issues_num (`proj_id`, `issue_num`, `repo_name`, `create_time`) values (%s,%s,'%s','%s')" % (projId,issueNum,repoName,dt)
         cur.execute(sql)
         conn.commit()
 
-
-if __name__ == "__main__":
+def start():
     pull.PullProcess()
     sourcePathBase = os.getcwd() + "\\" + cf.get("server", "gitCloneAddr")
-    targetPathBase = os.getcwd() + "\\" + cf.get("server","sonarTempAddr")
+    targetPathBase = os.getcwd() + "\\" + cf.get("server", "sonarTempAddr")
     for repo in pull.getCloneRepos():
-        proName,repoName,gitAddr,projId = repo
+        proName, repoName, gitAddr, projId = repo
         sourcePath = sourcePathBase + "\\" + repoName
         targetPath = targetPathBase + "\\" + repoName
         helper.mkdir(targetPath)
-        helper.copyFiles(sourcePath,targetPath)
+        helper.copyFiles(sourcePath, targetPath)
 
         sonarScan.runSonarScanner(targetPath)
 
         os.system('rmdir /S /Q "{}"'.format(targetPath))
-        addSonarResult(sonarResultAnalysis.getIssueNumberOfRepo(repoName),projId,repoName)
+        addSonarResult(sonarResultAnalysis.getIssueNumberOfRepo(repoName), projId, repoName)
+
+if __name__ == "__main__":
+    start()
 
 
 

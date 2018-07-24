@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*
 
 import ConfigParser
-import git
-import shutil
-
 import helper
 import pymysql
-import csv
-# import clone
 import pull
 import os
 import sonarScan

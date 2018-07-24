@@ -3,7 +3,6 @@ import ConfigParser
 import git
 import helper
 import pymysql
-import csv
 
 
 cf = ConfigParser.ConfigParser()

@@ -51,8 +51,8 @@ def configSonarProperty(repoName):
     properties[1] = properties[1] + repoName
     sera = '\n'
     pro = sera.join(properties)
-    path = cf.get("server","gitCloneAddr")+"\\"+repoName
-    fp = open(path + '\\sonar-project.properties','w')
+    path = cf.get("server","gitCloneAddr")+"/"+repoName
+    fp = open(path + '/sonar-project.properties','w')
     fp.write(pro)
     fp.close()
     print('SUCCESS')

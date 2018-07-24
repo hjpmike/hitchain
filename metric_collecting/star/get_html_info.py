@@ -23,13 +23,12 @@ logger.setLevel(logging.INFO)
 INTERVAL_TIME = config["html_fetch_interval"]
 REPO_ID = {}
 def readPrjLists():
-	prjs = []
-	with open("prjs.txt","r") as fp:
-		for prj_line in fp.readlines():
-			prjls =[item.strip() for item in prj_line.split("\t")]
-			repo_name = prjls[1][19:]
+	result = dbop.select_all("select prj_id,github_url from prj_list")
+	for prj in result:
+		if prj[1] is None:
+			repo_name =  prj[1][19:]
 			prjs.append(repo_name)
-			REPO_ID[repo_name] = int(prjls[0])
+			REPO_ID[repo_name] = int(prj[0])
 	return prjs
 
 def _uni_field(field):

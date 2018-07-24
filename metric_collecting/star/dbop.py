@@ -9,8 +9,8 @@ import Queue
 #########################################
 THREAD_POOL = Queue.Queue()
 for i in range(0,config["db_conn_pool_size"]):
-	conn =  MySQLdb.connect(config["db_host"],config["db_user"], 
-							config["db_passwd"],config["db_name"],charset='utf8mb4')
+	conn =  MySQLdb.connect(host=config["db_host"],user=config["db_user"], 
+							passwd=config["db_passwd"],db=config["db_name"],port=3306,charset='utf8mb4')
 	THREAD_POOL.put(conn)
 def get_conn():
 	conn = THREAD_POOL.get()

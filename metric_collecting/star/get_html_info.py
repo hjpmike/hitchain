@@ -25,7 +25,7 @@ REPO_ID = {}
 def readPrjLists():
 	result = dbop.select_all("select prj_id,github_url from prj_list")
 	for prj in result:
-		if prj[1] is None:
+		if prj[1] is not None:
 			repo_name =  prj[1][19:]
 			prjs.append(repo_name)
 			REPO_ID[repo_name] = int(prj[0])

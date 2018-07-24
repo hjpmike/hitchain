@@ -21,26 +21,46 @@ logger.setLevel(logging.INFO)
 REPOS = []
 INTERVAL_TIME = config['metric_compute_interval']
 EXAMINE_WINDOW = config["examine_window"]
+# 用户判断缺失值的，比如某个项目在某个社区没有数据
+NONE_GH, NONE_FB, NONE_TW = set(),set(),set()
 
 ####################
 # 工具函数
 ####################
 def readPrjLists():
-	with open("prjs.txt","r") as fp:
-		for prj_line in fp.readlines():
-			prjls = [item.strip() for item in prj_line.split("\t")]
-			REPOS.append(int(prjls[0]))
+	prjs = dbop.select_all("select prj_id,github_url,facebook_url,twitter_url from prj_list")
+	for prj in prjs:
+		REPOS.append(prj[0])
+		if prj[1] is None:
+			NONE_GH.add(prj[0])
+		if prj[2] is None or len(prj[2].strip())==0:
+			NONE_FB.add(prj[0])
+		if prj[3] is None or len(prj[3].strip())==0:
+			NONE_TW.add(prj[0])
+
+def _my_sum(data):
+	# 更能够处理包含none的数组
+	data_del_none = [item for item in data if item is not None]
+	if len(data_del_none) == 0:
+		return None
+	return sum(data_del_none)
 
 def _nor_data(dataSet):
-	min_edge = min(dataSet)
-	max_edge = max(dataSet)
+	dataSetValid = [item for item in dataSet if item is not None]
+	min_edge = min(dataSetValid)
+	max_edge = max(dataSetValid)
 	dur_edge = max_edge - min_edge
 	
-	# 如果数组内的元素都相同，直接返回一组0
+	# 如果数组内的元素都相同，防止除数为0
 	if dur_edge == 0:
-		return[0]*len(dataSet)
-
-	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
+		dur_edge = 1
+	result = []
+	for item in dataSet:
+		if item is None:
+			result.append(None)
+		else:
+			result.append((item*1.0 - min_edge)/dur_edge)
+	return result
 
 def _continuous_dev_month(data):
 	month_rec = set()
@@ -79,7 +99,7 @@ def _gini(array):
 
 # 专为 computeTrent函数服务
 def _socialfans_till_time(repo, dateTime):
-	fans_fb_before_1_window = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
+	fans_fb_before_1_window = dbop.select_one("select watches_num from facebook_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
 												(repo,dateTime),(0,))
 	fans_tw_before_1_window = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
 												(repo,dateTime),(0,))
@@ -98,27 +118,37 @@ def computeINF():
 	fans_fb,fans_tw = [],[]
 	for repo in REPOS:
 
-		# 开发社区的值
-		fans_now = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
-												(repo,time_now_str),(0,0,0))
-		fans_before = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
-												(repo,time_before_1_window),(0,0,0))
-		# 计算指标变化量, !!还真有变少的，
-		for i in range(0,3):
-			fans[i].append(fans_now[i] - fans_before[i])
+		if repo in NONE_GH: #该项目在github上没有
+			for i in range(0,3):
+				fans[i].append(None)
+		else:
+			# 开发社区的值
+			fans_now = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+													(repo,time_now_str),(0,0,0))
+			fans_before = dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+													(repo,time_before_1_window),(0,0,0))
+			# 计算指标变化量, !!还真有变少的，
+			for i in range(0,3):
+				fans[i].append(fans_now[i] - fans_before[i])
 
 		# 社交社区
-		fb_now = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
-							(repo,time_now_str),(0,))
-		fb_before = dbop.select_one("select watches_num from fb_data where coin_id=%s and update_time<=%s order by update_time desc limit 1",
-							(repo,time_before_1_window),(0,))
-		tw_now = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
-							(repo,time_now_str),(0,))
-		tw_before = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
-							(repo,time_before_1_window),(0,))
+		if repo in NONE_FB:
+			fans_fb.append(None)
+		else:
+			fb_now = dbop.select_one("select watches_num from facebook_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+								(repo,time_now_str),(0,))
+			fb_before = dbop.select_one("select watches_num from facebook_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+								(repo,time_before_1_window),(0,))
+			fans_fb.append(fb_now[0]-fb_before[0])
 		
-		fans_fb.append(fb_now[0]-fb_before[0])
-		fans_tw.append(tw_now[0]-tw_before[0])
+		if repo in NONE_TW:
+			fans_tw.append(None)
+		else:
+			tw_now = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+								(repo,time_now_str),(0,))
+			tw_before = dbop.select_one("select followers_num from twitters_data where coin_id=%s and created_time<=%s order by created_time desc limit 1",
+								(repo,time_before_1_window),(0,))
+			fans_tw.append(tw_now[0]-tw_before[0])
 		
 
 
@@ -130,7 +160,7 @@ def computeINF():
 		for j in range(0,len(fans)):
 			tmp_row.append(fans[j][i])
 		dbop.execute("insert into inf(repo_id,inf_dev,inf_social) values(%s,%s,%s)", 
-						(REPOS[i], sum(tmp_row[0:3]), sum(tmp_row[3:])))
+						(REPOS[i], _my_sum(tmp_row[0:3]), _my_sum(tmp_row[3:])))
 
 def computeMaturity():
 	# maturity: repo_id, issue_done, commit_total, age_dev, fans_dev
@@ -142,32 +172,46 @@ def computeMaturity():
 
 	# 获取每个指标
 	for repo_id in REPOS:
+		if repo_id in NONE_GH:
+			issue_done.append(None)
+			commit_total.append(None)
+			age_dev.append(None)
+			stars.append(None)
+			watchs.append(None)
+			forks.append(None)
+		else:
+			# issue_done
+			result = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and closed_at is not NULL",(repo_id,))
+			issue_done.append(result[0])
 
-		# issue_done
-		result = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and closed_at is not NULL",(repo_id,))
-		issue_done.append(result[0])
+			# commit_total
+			result = dbop.select_one("select count(*) from commits_info where repo_id=%s",(repo_id,))
+			commit_total.append(result[0])
 
-		# commit_total
-		result = dbop.select_one("select count(*) from commits_info where repo_id=%s",(repo_id,))
-		commit_total.append(result[0])
+			# age_dev
+			result = dbop.select_all("select author_date from commits_info where repo_id =%s",(repo_id,))
+			age_dev.append(_continuous_dev_month(result))
 
-		# age_dev
-		result = dbop.select_all("select author_date from commits_info where repo_id =%s",(repo_id,))
-		age_dev.append(_continuous_dev_month(result))
+			# fans_dev
+			result = dbop.select_one("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(repo_id,),(0,0,0))
+			stars.append(result[0])
+			watchs.append(result[1])
+			forks.append(result[2])
 
-		# fans_dev
-		result = dbop.select_one("select watch,star,fork from html_info where repo_id=%s order by id desc limit 1",(repo_id,),(0,0,0))
-		stars.append(result[0])
-		watchs.append(result[1])
-		forks.append(result[2])
+		if repo_id in NONE_FB:
+			fans_fb.append(None)
+		else:		
+			# fans_social
+			result = dbop.select_one("select watches_num from facebook_data where coin_id=%s order by id desc limit 1",
+										(repo_id,),(0,))
+			fans_fb.append(result[0])
 
-		# fans_social
-		result = dbop.select_one("select watches_num from fb_data where coin_id=%s order by id desc limit 1",
-									(repo_id,),(0,))
-		fans_fb.append(result[0])
-		result = dbop.select_one("select followers_num from twitters_data where coin_id=%s order by id desc limit 1",
-									(repo_id,),(0,))
-		fans_tw.append(result[0])
+		if repo_id in NONE_TW:
+			fans_tw.append(None)
+		else:	
+			result = dbop.select_one("select followers_num from twitters_data where coin_id=%s order by id desc limit 1",
+										(repo_id,),(0,))
+			fans_tw.append(result[0])
 
 	# 归一化
 	nor_data = []
@@ -177,7 +221,7 @@ def computeMaturity():
 	for i in range(0,len(REPOS)):
 		tmp_row = [nor_metric[i] for nor_metric in nor_data]
 		dbop.execute("insert into maturity(repo_id, issue_done, commit_total, age_dev, fans_dev, fans_social) values(%s,%s,%s,%s,%s,%s)",
-						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],sum(tmp_row[3:-2]),sum(tmp_row[-2:])))
+						(REPOS[i],tmp_row[0],tmp_row[1],tmp_row[2],_my_sum(tmp_row[3:-2]),_my_sum(tmp_row[-2:])))
 
 def computeQualitySub():
 
@@ -185,20 +229,23 @@ def computeQualitySub():
 	repair_ratio, repair_time = [],[]
 	metrics = [repair_ratio, repair_time]
 	for repo in REPOS:
-		# issue_total,done
-		result = dbop.select_all("select closed_at,created_at from issues_info where repo_id=%s and is_pr=0",(repo,))
-		total_num = len(result)
-		if total_num == 0:
-			tmp_repair_ratio = 0
-			tmp_repair_time = 0
+		if repo in NONE_GH:
+			repair_ratio.append(None)
+			repair_time.append(None)
 		else:
-			issue_done = [item for item in result if item[0] is not None]
-			tmp_repair_ratio = len(issue_done)*1.0 / total_num
-			tmp_repair_time = sum( [_datetime2int(item[0]) - _datetime2int(item[1]) 
-										for item in issue_done])*1.0 / len(issue_done)
-
-		repair_ratio.append(tmp_repair_ratio)
-		repair_time.append(1.0 / tmp_repair_time)
+			# issue_total,done
+			result = dbop.select_all("select closed_at,created_at from issues_info where repo_id=%s and is_pr=0",(repo,))
+			total_num = len(result)
+			if total_num == 0:
+				tmp_repair_ratio = 0
+				tmp_repair_time = 0
+			else:
+				issue_done = [item for item in result if item[0] is not None]
+				tmp_repair_ratio = len(issue_done)*1.0 / total_num
+				tmp_repair_time = _my_sum( [_datetime2int(item[0]) - _datetime2int(item[1]) 
+											for item in issue_done])*1.0 / len(issue_done)
+			repair_ratio.append(tmp_repair_ratio)
+			repair_time.append(1.0 / tmp_repair_time)
 
 	repair_time = _nor_data(repair_time)
 	for i in range(0,len(REPOS)):
@@ -216,32 +263,34 @@ def computeTeamHealth():
 
 	ccrs, ngrs, tbrs = [], [], []
 	for repo in REPOS:
-		# 几个重要集合
-		data_before_1_window = set([item[0] for item in 
-									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
-												(repo,time_before_1_window,time_now_str)) ] )
-		data_before_2_window = set([item[0] for item in  
-									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
-												(repo,time_before_2_window,time_before_1_window))])
-		data_before_3_window = set([item[0] for item in  
-									dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
-												(repo,time_before_3_window,time_before_2_window))])
-
-		# ccr
-		data_common = _common_num(data_before_1_window, data_before_2_window)
-		ccrs.append(data_common*1.0 / (len(data_before_2_window)+1)) #避免分母为0
-
-		# ngr
-		new_users_1 = len(data_before_1_window) - data_common  + 1 #避免分母为0
-		data_common_2 =  _common_num(data_before_3_window, data_before_2_window)
-		new_users_2 = len(data_before_2_window) - data_common_2 + 1 #避免分母为0
-		ngrs.append((new_users_1-new_users_2)*1.0/new_users_2)
-
-		# tbr 上一个窗口期的
-		commits_dis = dbop.select_all("select count(*) from commits_info where repo_id=%s and author_id is not null group by author_id", (repo,))
-		issues_dis = dbop.select_all("select count(*) from issues_info where repo_id=%s and user_id is not null group by user_id", (repo,))
-		tbrs.append(1.0/(_gini([item[0] for item in commits_dis]) + 
-							_gini([item[0] for item in issues_dis])))
+		if repo in NONE_GH:
+			ccrs.append(None)
+			ngrs.append(None)
+			tbrs.append(None)
+		else:
+			# 几个重要集合
+			data_before_1_window = set([item[0] for item in 
+										dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+													(repo,time_before_1_window,time_now_str)) ] )
+			data_before_2_window = set([item[0] for item in  
+										dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+													(repo,time_before_2_window,time_before_1_window))])
+			data_before_3_window = set([item[0] for item in  
+										dbop.select_all("select author_id from commits_info where repo_id=%s and author_id is not null and (author_date>%s and author_date<%s)",
+													(repo,time_before_3_window,time_before_2_window))])
+			# ccr
+			data_common = _common_num(data_before_1_window, data_before_2_window)
+			ccrs.append(data_common*1.0 / (len(data_before_2_window)+1)) #避免分母为0
+			# ngr
+			new_users_1 = len(data_before_1_window) - data_common  + 1 #避免分母为0
+			data_common_2 =  _common_num(data_before_3_window, data_before_2_window)
+			new_users_2 = len(data_before_2_window) - data_common_2 + 1 #避免分母为0
+			ngrs.append((new_users_1-new_users_2)*1.0/new_users_2)
+			# tbr 上一个窗口期的
+			commits_dis = dbop.select_all("select count(*) from commits_info where repo_id=%s and author_id is not null group by author_id", (repo,))
+			issues_dis = dbop.select_all("select count(*) from issues_info where repo_id=%s and user_id is not null group by user_id", (repo,))
+			tbrs.append(1.0/(_gini([item[0] for item in commits_dis]) + 
+								_gini([item[0] for item in issues_dis])))
 
 
 	metrics.append(_nor_data(ccrs))
@@ -264,13 +313,18 @@ def computeDevActv():
 	cbw, ibw, rbw = [],[],[]
 	metrics = [cbw, ibw, rbw]
 	for repo in REPOS:
-		# 几个重要集合
-		cbw.append(dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
-												(repo,time_before_1_window,time_now_str))[0])
-		ibw.append(dbop.select_one("select count(*) from issues_info where repo_id=%s and (created_at>%s and created_at<%s)",
-												(repo,time_before_1_window,time_now_str))[0]) 
-		rbw.append(dbop.select_one("select count(*) from releases_info where repo_id=%s and (created_at>%s and created_at<%s)",
-												(repo,time_before_1_window,time_now_str)) [0])
+		if repo in NONE_GH:
+			cbw.append(None)
+			ibw.append(None)
+			rbw.append(None)
+		else:
+			# 几个重要集合
+			cbw.append(dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<%s)",
+													(repo,time_before_1_window,time_now_str))[0])
+			ibw.append(dbop.select_one("select count(*) from issues_info where repo_id=%s and (created_at>%s and created_at<%s)",
+													(repo,time_before_1_window,time_now_str))[0]) 
+			rbw.append(dbop.select_one("select count(*) from releases_info where repo_id=%s and (created_at>%s and created_at<%s)",
+													(repo,time_before_1_window,time_now_str)) [0])
 	nor_metrics = [ _nor_data(item) for item in metrics]
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into dev_actv(repo_id,dev,rel) values(%s,%s,%s)",
@@ -286,48 +340,85 @@ def computeTrend():
 	
 	dits,tits,dcpts,ucpts = [],[],[],[]
 	for repo in REPOS:
+		if repo in NONE_GH:
+			dit.append(None)
+			tits.append(None)
+			dcpts.append(None)
+		else:
+			# dit
+			commits_before_1_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+													(repo,time_before_1_window,time_now_str))[0] 
+			commits_before_2_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+													(repo,time_before_2_window,time_before_1_window))[0]
+			commits_before_3_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
+													(repo,time_before_3_window,time_before_2_window))[0]
+			dits.append( ((commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) + 1.0) /
+							((commits_before_2_window - commits_before_3_window) + 1.0))
 
-		# dit
-		commits_before_1_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
-												(repo,time_before_1_window,time_now_str))[0] 
-		commits_before_2_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
-												(repo,time_before_2_window,time_before_1_window))[0]
-		commits_before_3_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
-												(repo,time_before_3_window,time_before_2_window))[0]
-		dits.append( ((commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) + 1.0) /
-						((commits_before_2_window - commits_before_3_window) + 1.0))
+			# tit
+			issues_before_1_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+													(repo,time_before_1_window,time_now_str))[0] 
+			issues_before_2_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+													(repo,time_before_2_window,time_before_1_window))[0]
+			issues_before_3_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
+													(repo,time_before_3_window,time_before_2_window))[0]
+			tits.append( ((issues_before_1_window - 2*issues_before_2_window + issues_before_3_window) + 1.0) /
+							((issues_before_2_window - issues_before_3_window) + 1.0))
 
-		# tit
-		issues_before_1_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
-												(repo,time_before_1_window,time_now_str))[0] 
-		issues_before_2_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
-												(repo,time_before_2_window,time_before_1_window))[0]
-		issues_before_3_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
-												(repo,time_before_3_window,time_before_2_window))[0]
-		tits.append( ((issues_before_1_window - 2*issues_before_2_window + issues_before_3_window) + 1.0) /
-						((issues_before_2_window - issues_before_3_window) + 1.0))
+			# dcpt
+			fans_before_1_window = _my_sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+													(repo,time_now_str),(0,0,0)))
+			fans_before_2_window = _my_sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+													(repo,time_before_1_window),(0,0,0)))
+			fans_before_3_window = _my_sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
+													(repo,time_before_2_window),(0,0,0)))
+			dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+							(fans_before_2_window - fans_before_3_window + 1.0))
 
-		# dcpt
-		fans_before_1_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
-												(repo,time_now_str),(0,0,0)))
-		fans_before_2_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
-												(repo,time_before_1_window),(0,0,0)))
-		fans_before_3_window = sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
-												(repo,time_before_2_window),(0,0,0)))
-		dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
-						(fans_before_2_window - fans_before_3_window + 1.0))
-
-		# UCPT
-		fans_before_1_window = _socialfans_till_time(repo,time_now_str)
-		fans_before_2_window = _socialfans_till_time(repo,time_before_1_window)
-		fans_before_3_window = _socialfans_till_time(repo,time_before_2_window)
-		ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
-						(fans_before_2_window - fans_before_3_window + 1.0))
+			# UCPT
+		if repo is NONE_FB and repo in NONE_TW:
+			ucpts.append(None)
+		else:
+			fans_before_1_window = _socialfans_till_time(repo,time_now_str)
+			fans_before_2_window = _socialfans_till_time(repo,time_before_1_window)
+			fans_before_3_window = _socialfans_till_time(repo,time_before_2_window)
+			ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+							(fans_before_2_window - fans_before_3_window + 1.0))
 	dits,tits,dcpts,ucpts = _nor_data(dits),_nor_data(tits),_nor_data(dcpts),_nor_data(ucpts)
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into trend(repo_id,dit,tit,dcpt,ucpt) values(%s,%s,%s,%s,%s)",
 						(REPOS[i],dits[i],tits[i],dcpts[i],ucpts[i]))
-		
+
+def computeScore():
+	M1,M2,M3,M4,M5,M6 = {},{},{},{},{},{}
+	score = []
+	dateTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+	for repo in REPOS:
+		M1[repo] = _my_sum(dbop.select_one("select inf_dev,inf_social from inf where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		M2[repo] = _my_sum(dbop.select_one("select issue_done, commit_total, age_dev, fans_dev, fans_social from maturity where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		M3[repo] = _my_sum(dbop.select_one("select repair_ratio,repair_time from quality_sub where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		M4[repo] = _my_sum(dbop.select_one("selecg  ccr,ngr,tbr from team_health where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		M5[repo] = _my_sum(dbop.select_one("select  ,dev,rel from dev_actv where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		M6[repo] = _my_sum(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
+						(prj,dateTime),(0,0)))
+		score.append((repo,_my_sum([M1,M2,M3,M4,M5,M6])))
+	score = sorted(score, key=lambda x: x[1])
+	M1,M2,M3,M4,M5,M6 = _nor_data(M1),_nor_data(M2),_nor_data(M3),_nor_data(M4),_nor_data(M5),_nor_data(M6)
+
+	field_sql_str = "prj_id,rank,score,m1_inf,m2_maturity,m3_quality,m4_team_healty,m5_activatin,m6_trend"
+	for i in range(0,len(score)):
+		repo,r_score = score[i]
+		dbop.execute("insert into dayly_rank(" + field_sql_str+") values(%s" + ",%s"*8+")",
+					(repo,i+1,r_score,M1[repo],M2[repo],M3[repo],M4[repo],M5[repo],M6[repo]))
+
+
+
+
 def main():
 	logger.info(">>>>>metrics begins to work")
 	while True:

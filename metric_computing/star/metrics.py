@@ -413,7 +413,7 @@ def computeScore():
 	field_sql_str = "prj_id,rank,score,m1_inf,m2_maturity,m3_quality,m4_team_healty,m5_activatin,m6_trend"
 	for i in range(0,len(score)):
 		repo,r_score = score[i]
-		dbop.execute("insert into dayly_rank(" + field_sql_str+") values(%s" + ",%s"*8+")",
+		dbop.execute("insert into daily_rank(" + field_sql_str+") values(%s" + ",%s"*8+")",
 					(repo,i+1,r_score,M1[repo],M2[repo],M3[repo],M4[repo],M5[repo],M6[repo]))
 
 

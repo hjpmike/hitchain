@@ -294,7 +294,7 @@ def computeTeamHealth():
 			tbrs.append(1.0/(_gini([item[0] for item in commits_dis]) + 
 								_gini([item[0] for item in issues_dis]) + 1))
 
-
+	metrics = []
 	metrics.append(_nor_data(ccrs))
 	metrics.append(_nor_data(ngrs))
 	metrics.append(_nor_data(tbrs))

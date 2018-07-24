@@ -350,7 +350,7 @@ def computeTrend():
 	dits,tits,dcpts,ucpts = [],[],[],[]
 	for repo in REPOS:
 		if repo in NONE_GH:
-			dit.append(None)
+			dits.append(None)
 			tits.append(None)
 			dcpts.append(None)
 		else:

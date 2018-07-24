@@ -415,30 +415,31 @@ def computeTrend():
 						(REPOS[i],dits[i],tits[i],dcpts[i],ucpts[i]))
 
 def computeScore():
-	M1,M2,M3,M4,M5,M6 = [],[],[],[],[],[]
+	M1,M2,M3,M4,M5,M6 = {},{},{},{},{},{}
 	score = []
 	dateTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
 	for repo in REPOS:
-		M1.append(_my_avg(dbop.select_one("select inf_dev,inf_social from inf where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		M2.append(_my_avg(dbop.select_one("select issue_done, commit_total, age_dev, fans_dev, fans_social from maturity where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		M3.append(_my_avg(dbop.select_one("select repair_ratio,repair_time from quality_sub where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		M4.append(_my_avg(dbop.select_one("select  ccr,ngr,tbr from team_health where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		M5.append(_my_avg(dbop.select_one("select  dev,rel from dev_actv where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		M6.append(_my_avg(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
-						(repo,dateTime),(0,0))))
-		score.append((repo,_my_avg([M1[-1],M2[-1],M3[-1],M4[-1],M5[-1],M6[-1]])))
+		M1[repo] = _my_avg(dbop.select_one("select inf_dev,inf_social from inf where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		M2[repo] = _my_avg(dbop.select_one("select issue_done, commit_total, age_dev, fans_dev, fans_social from maturity where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		M3[repo] = _my_avg(dbop.select_one("select repair_ratio,repair_time from quality_sub where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		M4[repo] = _my_avg(dbop.select_one("select  ccr,ngr,tbr from team_health where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		M5[repo] = _my_avg(dbop.select_one("select  dev,rel from dev_actv where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		M6[repo] = _my_avg(dbop.select_one("select  dit,tit,dcpt,ucpt from trend where repo_id=%s and computed_at<=%s order by id limit 1",
+						(repo,dateTime),(0,0)))
+		score.append((repo,_my_avg([M1[repo],M2[repo],M3[repo],M4[repo],M5[repo],M6[repo]])))
+
 	score = sorted(score, key=lambda x: x[1],reverse=True)
 
 	field_sql_str = "prj_id,rank,score,m1_inf,m2_maturity,m3_quality,m4_team_healty,m5_activatin,m6_trend"
 	for i in range(0,len(score)):
 		repo,r_score = score[i]
 		dbop.execute("insert into daily_rank(" + field_sql_str+") values(%s" + ",%s"*8+")",
-					(repo,i+1,r_score,M1[i],M2[i],M3[i],M4[i],M5[i],M6[i]))
+					(repo,i+1,r_score,M1[repo],M2[repo],M3[repo],M4[repo],M5[repo],M6[repo]))
 
 
 

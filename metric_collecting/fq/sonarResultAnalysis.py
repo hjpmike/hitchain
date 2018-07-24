@@ -25,7 +25,7 @@ def getMetricsOfRepo(repoName):
 
 def getIssueResult(repoName):
 
-    params = {"componentKeys":repoName,"severities":"CRITICAL%2CMAJOR"}
+    params = {"componentKeys":repoName}
     r = requests.get(issue_url, params = params)
     if not r.json():
         print("")

@@ -39,13 +39,21 @@ def readPrjLists():
 			NONE_TW.add(prj[0])
 
 def _nor_data(dataSet):
-	min_edge = min(dataSet)
-	max_edge = max(dataSet)
+	dataSetValid = [item for item in dataSet if item is not None]
+	min_edge = min(dataSetValid)
+	max_edge = max(dataSetValid)
 	dur_edge = max_edge - min_edge
 	
-	# 如果数组内的元素都相同，直接返回一组0
+	# 如果数组内的元素都相同，防止除数为0
 	if dur_edge == 0:
-		return[0]*len(dataSet)
+		dur_edge = 1
+	result = []
+	for item in dataSet:
+		if item is None:
+			result.append(None)
+		else:
+			result.append((item*1.0 - min_edge)/dur_edge)
+	return result
 
 	return [(item*1.0 - min_edge)/dur_edge for item in dataSet]
 

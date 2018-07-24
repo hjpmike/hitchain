@@ -14,7 +14,7 @@ def main():
 			prjls = [item.strip() for item in prj_line.split("\t")]
 
 			dbop.execute("update prj_list set github_url=%s where prj_id=%s",
-							(repo_name,prjls[0]))
+							(prjls[1],prjls[0]))
 	# 加个字段
 	dbop.execute("alter table prj_list add prj_type varchar(50);")
 	dbop.execute("update prj_list set prj_tye='blockchain';")

@@ -17,7 +17,7 @@ def main():
 							(prjls[1],prjls[0]))
 	# 加个字段
 	dbop.execute("alter table prj_list add prj_type varchar(50);")
-	dbop.execute("update prj_list set prj_tye='blockchain';")
+	dbop.execute("update prj_list set prj_type='blockchain';")
 
 
 if __name__ == '__main__':

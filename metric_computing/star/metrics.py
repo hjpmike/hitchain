@@ -87,6 +87,8 @@ def _common_num(dataset1, dataset2):
 	return data_common
 
 def _gini(array):
+	if len(array) == 0:
+		return 0
 	array = np.array([item+0.0 for item in array]) # changes a list to np array
 	array = array.flatten() #all values are treated equally, arrays must be 1d
 	if np.amin(array) < 0:
@@ -290,7 +292,7 @@ def computeTeamHealth():
 			commits_dis = dbop.select_all("select count(*) from commits_info where repo_id=%s and author_id is not null group by author_id", (repo,))
 			issues_dis = dbop.select_all("select count(*) from issues_info where repo_id=%s and user_id is not null group by user_id", (repo,))
 			tbrs.append(1.0/(_gini([item[0] for item in commits_dis]) + 
-								_gini([item[0] for item in issues_dis])))
+								_gini([item[0] for item in issues_dis]) + 1))
 
 
 	metrics.append(_nor_data(ccrs))

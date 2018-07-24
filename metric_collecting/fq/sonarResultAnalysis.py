@@ -20,6 +20,7 @@ def getMetric(repoName,metricKeys):
 
 def getMetricsOfRepo(repoName):
     loc = getMetric(repoName,"ncloc")
+    return {"loc":loc}
 
 
 def getIssueResult(repoName):

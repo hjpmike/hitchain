@@ -27,8 +27,9 @@ def readPrjLists():
 	with open("prjs.txt","r") as fp:
 		for prj_line in fp.readlines():
 			prjls =[item.strip() for item in prj_line.split("\t")]
-			prjs.append(prjls[1])
-			REPO_ID[prjls[1]] = int(prjls[0])
+			repo_name = prjls[1][19:]
+			prjs.append(repo_name)
+			REPO_ID[repo_name] = int(prjls[0])
 	return prjs
 
 def _uni_field(field):
@@ -59,9 +60,13 @@ def _extract_html(ini_html):
 	#contributor,release,commit,branch
 	# # !!! 应该要判断该规则是否还有效
 	lis = etree.HTML(ini_html).xpath('//*/ul[@class="numbers-summary"]/li/a')
-	for lia in lis[0:-1]:
+	for lia in lis:
 		try:
 			tmp_txt = _uni_field(lia.xpath("./text()")[-1].strip())
+			if tmp_txt not in ["commit","commits","branch","branches","release","releases",
+									"contributor","contributors"]:
+				print tmp_txt
+				continue
 			tmp_num = lia.xpath("./span")[0].text.strip()
 			nums[tmp_txt] = tmp_num.replace(",","")
 		except Exception,e:

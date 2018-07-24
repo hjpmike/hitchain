@@ -59,16 +59,14 @@ def select_all(sql_stat,params=None):
 #### funcs created for inf_dev.py
 #########################################
 
-def createINF_DEV():
+def createINF():
 	html_info_sql = '''
-	CREATE TABLE IF NOT EXISTS `inf_dev`  (
+	CREATE TABLE IF NOT EXISTS `inf`  (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`repo_id` int(11) DEFAULT NULL,
-		`star` int(11) DEFAULT NULL,
-		`fork` int(11) DEFAULT NULL,
-		`watch` int(11) DEFAULT NULL,
-		`nor_inf` double DEFAULT NULL,
-		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		`inf_dev` double(4,3) DEFAULT NULL,
+		`inf_social` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1
 	'''
@@ -83,6 +81,62 @@ def createMaturity():
 		`commit_total` double(4,3) DEFAULT NULL,
 		`age_dev` double(4,3) DEFAULT NULL,
 		`fans_dev` double(4,3) DEFAULT NULL,
+		`fans_social` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)
+
+def createQualitySub():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `quality_sub`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`repair_ratio` double(4,3) DEFAULT NULL,
+		`repair_time` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)
+
+def createTeamHealth():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `team_health`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`ccr` double(4,3) DEFAULT NULL,
+		`ngr` double(4,3) DEFAULT NULL,
+		`tbr` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)
+
+def createDevActv():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `dev_actv`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`dev` double(4,3) DEFAULT NULL,
+		`rel` double(4,3) DEFAULT NULL,
+		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`)
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1
+	'''
+	execute(html_info_sql)
+
+def createTrend():
+	html_info_sql = '''
+	CREATE TABLE IF NOT EXISTS `trend`  (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`repo_id` int(11) DEFAULT NULL,
+		`dit` double(10,3) DEFAULT NULL,
+		`tit` double(10,3) DEFAULT NULL,
+		`dcpt` double(10,3) DEFAULT NULL,
+		`ucpt` double(10,3) DEFAULT NULL,
 		`computed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=latin1

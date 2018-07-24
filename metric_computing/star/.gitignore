@@ -1,4 +1,5 @@
 *.pyc
 test.py
+*.json
 log/*
 !log/.placeholder

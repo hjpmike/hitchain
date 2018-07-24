@@ -17,15 +17,25 @@ conn = pymysql.connect(host=cf.get("DB","host"),
                        charset='utf8')
 
 def gitPull(repoPullDir):
+    helper.mkdir(repoPullDir)
     repo = git.Repo(repoPullDir)
     o = repo.remotes.origin
     o.pull()
 
+def getCloneRepos():
+    with conn.cursor() as cur:
+        sql = "select proj_name,repo_name,git_addr,proj_id from git_clone_pull_status where is_clone = 1"
+        cur.execute(sql)
+        return cur.fetchall()
+
+def updateCloneStatus(proName,repoName):
+    with conn.cursor() as cur:
+        sql = "update git_clone_pull_status set is_clone = 1 where proj_name = '%s' and repo_name = '%s'" % (proName,repoName)
+        cur.execute(sql)
+        conn.commit()
 
 def PullProcess():
-    repoListFile = cf.get("server", "repoList")
-    with open(repoListFile,"r") as f:
-        reader = csv.reader(f,delimiter = ",")
-        for item in reader:
-            proName,repoName,gitAddr = item
-            gitPull(cf.get("server","gitCloneAddr")+repoName)
+    for repo in getCloneRepos():
+        proName,repoName,gitAddr,projId = repo
+        gitPull(cf.get("server","gitCloneAddr")+"\\"+repoName)
+        updateCloneStatus(proName,repoName)

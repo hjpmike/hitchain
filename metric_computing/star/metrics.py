@@ -361,8 +361,12 @@ def computeTrend():
 													(repo,time_before_2_window,time_before_1_window))[0]
 			commits_before_3_window = dbop.select_one("select count(*) from commits_info where repo_id=%s and (author_date>%s and author_date<=%s)",
 													(repo,time_before_3_window,time_before_2_window))[0]
-			dits.append( ((commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) + 1.0) /
+			if (commits_before_2_window - commits_before_3_window) == 0:
+				dits.append( ((commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) + 1.0) /
 							((commits_before_2_window - commits_before_3_window) + 1.0))
+			else:
+				dits.append( (commits_before_1_window - 2*commits_before_2_window + commits_before_3_window) /
+							(commits_before_2_window - commits_before_3_window))
 
 			# tit
 			issues_before_1_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
@@ -371,8 +375,12 @@ def computeTrend():
 													(repo,time_before_2_window,time_before_1_window))[0]
 			issues_before_3_window = dbop.select_one("select count(*) from issues_info where repo_id=%s and is_pr=0 and (created_at>%s and created_at<=%s)",
 													(repo,time_before_3_window,time_before_2_window))[0]
-			tits.append( ((issues_before_1_window - 2*issues_before_2_window + issues_before_3_window) + 1.0) /
+			if (issues_before_2_window - issues_before_3_window) == 0:
+				tits.append( ((issues_before_1_window - 2*issues_before_2_window + issues_before_3_window) + 1.0) /
 							((issues_before_2_window - issues_before_3_window) + 1.0))
+			else:
+				tits.append( (issues_before_1_window - 2*issues_before_2_window + issues_before_3_window)/
+							(issues_before_2_window - issues_before_3_window))
 
 			# dcpt
 			fans_before_1_window = _my_sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
@@ -381,8 +389,12 @@ def computeTrend():
 													(repo,time_before_1_window),(0,0,0)))
 			fans_before_3_window = _my_sum(dbop.select_one("select watch,star,fork from html_info where repo_id=%s and fetched_at<=%s order by fetched_at desc limit 1",
 													(repo,time_before_2_window),(0,0,0)))
-			dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+			if (fans_before_2_window - fans_before_3_window) == 0:
+				dcpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 							(fans_before_2_window - fans_before_3_window + 1.0))
+			else:
+				dcpts.append( (fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) /
+							(fans_before_2_window - fans_before_3_window))
 
 			# UCPT
 		if repo is NONE_FB and repo in NONE_TW:
@@ -391,8 +403,12 @@ def computeTrend():
 			fans_before_1_window = _socialfans_till_time(repo,time_now_str)
 			fans_before_2_window = _socialfans_till_time(repo,time_before_1_window)
 			fans_before_3_window = _socialfans_till_time(repo,time_before_2_window)
-			ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
+			if (fans_before_2_window - fans_before_3_window) == 0:
+				ucpts.append( ((fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) + 1.0) /
 							(fans_before_2_window - fans_before_3_window + 1.0))
+			else:
+				ucpts.append( (fans_before_1_window - 2*fans_before_2_window + fans_before_3_window) /
+							(fans_before_2_window - fans_before_3_window))
 	dits,tits,dcpts,ucpts = _nor_data(dits),_nor_data(tits),_nor_data(dcpts),_nor_data(ucpts)
 	for i in range(0,len(REPOS)):
 		dbop.execute("insert into trend(repo_id,dit,tit,dcpt,ucpt) values(%s,%s,%s,%s,%s)",

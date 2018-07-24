@@ -173,7 +173,7 @@ def computeMaturity():
 			issue_done.append(None)
 			commit_total.append(None)
 			age_dev.append(None)
-			star.append(None)
+			stars.append(None)
 			watchs.append(None)
 			forks.append(None)
 		else:

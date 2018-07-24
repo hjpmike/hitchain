@@ -1,6 +1,6 @@
 #coding:utf-8
 config = {
-	"db_host" : "localhost",
+	"db_host" : "127.0.0.1",
 	"db_name" : "ossean_coin_rank",
 	"db_user" : "root",
 	"db_passwd" : "password",

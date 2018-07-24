@@ -23,6 +23,7 @@ logger.setLevel(logging.INFO)
 INTERVAL_TIME = config["html_fetch_interval"]
 REPO_ID = {}
 def readPrjLists():
+	prjs = []
 	result = dbop.select_all("select prj_id,github_url from prj_list")
 	for prj in result:
 		if prj[1] is not None:

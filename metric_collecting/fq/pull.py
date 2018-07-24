@@ -36,5 +36,5 @@ def updateCloneStatus(proName,repoName):
 def PullProcess():
     for repo in getCloneRepos():
         proName,repoName,gitAddr,projId = repo
-        gitPull(cf.get("server","gitCloneAddr")+"\\"+repoName)
+        gitPull(cf.get("server","gitCloneAddr")+"/"+repoName)
         updateCloneStatus(proName,repoName)
